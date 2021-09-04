@@ -3,7 +3,7 @@
 
 #include "framework.h"
 #include "resource.h"
-#include "dance.h"
+#include "engine.h"
 
 // Indicates to hybrid graphics systems to prefer the discrete part by default
 extern "C"
@@ -16,7 +16,7 @@ extern "C"
 
 struct {
     HINSTANCE Handle = nullptr;
-    Visualizer Visualizer;
+    Engine Engine;
 } Window;
 
 INT_PTR CALLBACK ShowAboutDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
@@ -45,7 +45,7 @@ LRESULT CALLBACK HandleWindowEvent(HWND hWnd, UINT message, WPARAM wParam, LPARA
     static bool s_minimized = false;
     static bool s_fullscreen = false;
 
-    Visualizer* visualizer = reinterpret_cast<Visualizer*>(GetWindowLongPtr(hWnd, GWLP_USERDATA));
+    Engine* engine = reinterpret_cast<Engine*>(GetWindowLongPtr(hWnd, GWLP_USERDATA));
 
     switch (message)
     {
@@ -66,9 +66,9 @@ LRESULT CALLBACK HandleWindowEvent(HWND hWnd, UINT message, WPARAM wParam, LPARA
     case WM_PAINT:
         if (s_in_sizemove) 
         {
-            if (visualizer)
+            if (engine)
             {
-                visualizer->Tick();
+                engine->Tick();
             }
         }
         else 
@@ -85,9 +85,9 @@ LRESULT CALLBACK HandleWindowEvent(HWND hWnd, UINT message, WPARAM wParam, LPARA
             if (!s_minimized)
             {
                 s_minimized = true;
-                if (!s_in_suspend && visualizer)
+                if (!s_in_suspend && engine)
                 {
-                    visualizer->OnSuspending();
+                    engine->OnSuspending();
                 }
                 s_in_suspend = true;
             }
@@ -95,15 +95,15 @@ LRESULT CALLBACK HandleWindowEvent(HWND hWnd, UINT message, WPARAM wParam, LPARA
         else if (s_minimized)
         {
             s_minimized = false;
-            if (s_in_suspend && visualizer)
+            if (s_in_suspend && engine)
             {
-                visualizer->OnResuming();
+                engine->OnResuming();
             }
             s_in_suspend = false;
         }
-        else if (!s_in_sizemove && visualizer)
+        else if (!s_in_sizemove && engine)
         {
-            visualizer->OnWindowSizeChanged({ 0, 0, LOWORD(lParam), HIWORD(lParam) });
+            engine->OnWindowSizeChanged({ 0, 0, LOWORD(lParam), HIWORD(lParam) });
         }
         break;
 
@@ -113,11 +113,11 @@ LRESULT CALLBACK HandleWindowEvent(HWND hWnd, UINT message, WPARAM wParam, LPARA
 
     case WM_EXITSIZEMOVE:
         s_in_sizemove = false;
-        if (visualizer)
+        if (engine)
         {
             RECT rectangle;
             GetClientRect(hWnd, &rectangle);
-            visualizer->OnWindowSizeChanged(rectangle);
+            engine->OnWindowSizeChanged(rectangle);
         }
         break;
 
@@ -131,15 +131,15 @@ LRESULT CALLBACK HandleWindowEvent(HWND hWnd, UINT message, WPARAM wParam, LPARA
         break;
 
     case WM_ACTIVATEAPP:
-        if (visualizer)
+        if (engine)
         {
             if (wParam)
             {
-                visualizer->OnActivated();
+                engine->OnActivated();
             }
             else
             {
-                visualizer->OnDeactivated();
+                engine->OnDeactivated();
             }
         }
         break;
@@ -148,9 +148,9 @@ LRESULT CALLBACK HandleWindowEvent(HWND hWnd, UINT message, WPARAM wParam, LPARA
         switch (wParam)
         {
         case PBT_APMQUERYSUSPEND:
-            if (!s_in_suspend && visualizer)
+            if (!s_in_suspend && engine)
             {
-                visualizer->OnSuspending();
+                engine->OnSuspending();
             }
             s_in_suspend = true;
             return TRUE;
@@ -158,9 +158,9 @@ LRESULT CALLBACK HandleWindowEvent(HWND hWnd, UINT message, WPARAM wParam, LPARA
         case PBT_APMRESUMESUSPEND:
             if (!s_minimized)
             {
-                if (s_in_suspend && visualizer)
+                if (s_in_suspend && engine)
                 {
-                    visualizer->OnResuming();
+                    engine->OnResuming();
                 }
                 s_in_suspend = false;
             }
@@ -178,7 +178,7 @@ LRESULT CALLBACK HandleWindowEvent(HWND hWnd, UINT message, WPARAM wParam, LPARA
                 SetWindowLongPtr(hWnd, GWL_EXSTYLE, 0);
 
                 ShowWindow(hWnd, SW_SHOWNORMAL);
-                RECT rectangle = visualizer->GetDefaultSize();
+                RECT rectangle = engine->GetDefaultSize();
 
                 SetWindowPos(
                     hWnd,
@@ -233,7 +233,7 @@ HRESULT RegisterWindowClass(HINSTANCE hInstance, WCHAR* szWindowClass)
     wcex.lpszClassName = szWindowClass;
     wcex.hIconSm = LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_SMALL));
 
-    RECT rectangle = Window.Visualizer.GetDefaultSize();
+    RECT rectangle = Window.Engine.GetDefaultSize();
     AdjustWindowRect(&rectangle, WS_OVERLAPPEDWINDOW, FALSE);
     return RegisterClassExW(&wcex) ? 0 : 1;
 }
@@ -259,12 +259,12 @@ HRESULT SetupWindow(HINSTANCE hInstance, int nCmdShow, WCHAR* szWindowClass, WCH
     }
 
     ShowWindow(hWnd, nCmdShow);
-    SetWindowLongPtr(hWnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(&Window.Visualizer));
+    SetWindowLongPtr(hWnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(&Window.Engine));
     UpdateWindow(hWnd);
 
     RECT rectangle;
     GetClientRect(hWnd, &rectangle);
-    Window.Visualizer.Setup(hWnd, rectangle);
+    Window.Engine.Setup(hWnd, rectangle);
 
     return 0;
 }
@@ -312,11 +312,11 @@ int APIENTRY wWinMain(
         }
         else
         {
-            Window.Visualizer.Tick();
+            Window.Engine.Tick();
         }
     }
 
-    Window.Visualizer.Teardown();
+    Window.Engine.Teardown();
     CoUninitialize();
 
     return msg.wParam;
