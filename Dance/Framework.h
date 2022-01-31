@@ -54,7 +54,9 @@
 #include <audioclient.h>
 #include <audiopolicy.h>
 #include <mmreg.h>
+#include <functiondiscoverykeys_devpkey.h> 
 
+#include <string>
 #include <iostream>
 #include <sstream>
 

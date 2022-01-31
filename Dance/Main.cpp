@@ -2,8 +2,15 @@
 //
 
 #include "framework.h"
+#include "capture.h"
 #include "resource.h"
 #include "engine.h"
+
+#include <Windows.h>
+#include <time.h>
+#include <iostream>
+
+using namespace std;
 
 // Indicates to hybrid graphics systems to prefer the discrete part by default
 extern "C"
@@ -300,6 +307,19 @@ int APIENTRY wWinMain(
         return result;
     }
 
+    try 
+    {
+        Capture capture(getDefaultDevice());
+        capture.Start();
+        capture.Debug();
+        capture.Stop();
+    }
+    catch (CaptureException& exception) 
+    {
+        TRACE("error setting up audio capture: " << exception.hresult);
+        return exception.hresult;
+    }
+    
     HACCEL hAcceleratorTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_DANCE));
     MSG msg;
 
