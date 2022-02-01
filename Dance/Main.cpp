@@ -1,16 +1,11 @@
 // Dance.cpp : Defines the entry point for the application.
 //
 
-#include "framework.h"
-#include "capture.h"
-#include "resource.h"
-#include "engine.h"
-
-#include <Windows.h>
 #include <time.h>
-#include <iostream>
 
-using namespace std;
+#include "Framework.h"
+#include "Core/Window.h"
+#include "Engine/Engine.h"
 
 // Indicates to hybrid graphics systems to prefer the discrete part by default
 extern "C"
@@ -20,25 +15,20 @@ extern "C"
 }
 
 #define MAX_LOADED_STRING_LENGTH 100
-
-struct {
-    HINSTANCE Handle = nullptr;
-    Engine Engine;
-} Window;
-
+/*
 INT_PTR CALLBACK ShowAboutDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
     UNREFERENCED_PARAMETER(lParam);
     switch (message)
     {
     case WM_INITDIALOG:
-        return (INT_PTR)TRUE;
+        return (INT_PTR)true;
 
     case WM_COMMAND:
         if (LOWORD(wParam) == IDOK || LOWORD(wParam) == IDCANCEL)
         {
             EndDialog(hDlg, LOWORD(wParam));
-            return (INT_PTR)TRUE;
+            return (INT_PTR)true;
         }
         break;
     }
@@ -160,7 +150,7 @@ LRESULT CALLBACK HandleWindowEvent(HWND hWnd, UINT message, WPARAM wParam, LPARA
                 engine->OnSuspending();
             }
             s_in_suspend = true;
-            return TRUE;
+            return true;
 
         case PBT_APMRESUMESUSPEND:
             if (!s_minimized)
@@ -171,7 +161,7 @@ LRESULT CALLBACK HandleWindowEvent(HWND hWnd, UINT message, WPARAM wParam, LPARA
                 }
                 s_in_suspend = false;
             }
-            return TRUE;
+            return true;
         }
         break;
 
@@ -223,90 +213,26 @@ LRESULT CALLBACK HandleWindowEvent(HWND hWnd, UINT message, WPARAM wParam, LPARA
 
     return 0;
 }
-
-HRESULT RegisterWindowClass(HINSTANCE hInstance, WCHAR* szWindowClass)
-{
-    WNDCLASSEXW wcex;
-    wcex.cbSize = sizeof(WNDCLASSEX);
-    wcex.style = CS_HREDRAW | CS_VREDRAW;
-    wcex.lpfnWndProc = HandleWindowEvent;
-    wcex.cbClsExtra = 0;
-    wcex.cbWndExtra = 0;
-    wcex.hInstance = hInstance;
-    wcex.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_DANCE));
-    wcex.hCursor = LoadCursor(nullptr, IDC_ARROW);
-    wcex.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
-    wcex.lpszMenuName = MAKEINTRESOURCEW(IDC_DANCE);
-    wcex.lpszClassName = szWindowClass;
-    wcex.hIconSm = LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_SMALL));
-
-    RECT rectangle = Window.Engine.GetDefaultSize();
-    AdjustWindowRect(&rectangle, WS_OVERLAPPEDWINDOW, FALSE);
-    return RegisterClassExW(&wcex) ? 0 : 1;
-}
-
-HRESULT SetupWindow(HINSTANCE hInstance, int nCmdShow, WCHAR* szWindowClass, WCHAR* szWindowTitle)
-{
-    HWND hWnd = CreateWindowW(
-        szWindowClass,
-        szWindowTitle,
-        WS_OVERLAPPEDWINDOW,
-        CW_USEDEFAULT,
-        0,
-        CW_USEDEFAULT,
-        0,
-        nullptr,
-        nullptr,
-        hInstance,
-        nullptr);
-
-    if (!hWnd)
-    {
-        return 1;
-    }
-
-    ShowWindow(hWnd, nCmdShow);
-    SetWindowLongPtr(hWnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(&Window.Engine));
-    UpdateWindow(hWnd);
-
-    RECT rectangle;
-    GetClientRect(hWnd, &rectangle);
-    Window.Engine.Setup(hWnd, rectangle);
-
-    return 0;
-}
+*/
 
 int APIENTRY wWinMain(
-    _In_ HINSTANCE hInstance,
-    _In_opt_ HINSTANCE hPrevInstance,
-    _In_ LPWSTR lpCmdLine,
-    _In_ int nCmdShow)
+    _In_ InstanceHandle instance,
+    _In_opt_ InstanceHandle previousInstance,
+    _In_ LPWSTR commandLine,
+    _In_ int showCommand)
 {
-    Window.Handle = hInstance;
+    UNREFERENCED_PARAMETER(previousInstance);
+    UNREFERENCED_PARAMETER(commandLine);
 
-    UNREFERENCED_PARAMETER(hPrevInstance);
-    UNREFERENCED_PARAMETER(lpCmdLine);
-
-    WCHAR szWindowClass[MAX_LOADED_STRING_LENGTH];
     WCHAR szWindowTitle[MAX_LOADED_STRING_LENGTH];
-    LoadStringW(hInstance, IDS_APP_TITLE, szWindowClass, MAX_LOADED_STRING_LENGTH);
-    LoadStringW(hInstance, IDS_APP_TITLE, szWindowTitle, MAX_LOADED_STRING_LENGTH);
+    LoadStringW(instance, IDS_APP_TITLE, szWindowTitle, MAX_LOADED_STRING_LENGTH);
 
-    GUARD(CoInitializeEx(nullptr, COINITBASE_MULTITHREADED), result) {
+    GUARD(::CoInitializeEx(nullptr, COINITBASE_MULTITHREADED), result) {
         TRACE("failed to initialize threading model: " << result);
         return result;
     }
 
-    GUARD(RegisterWindowClass(hInstance, szWindowClass), result) {
-        TRACE("failed to register window class");
-        return result;
-    }
-
-    GUARD(SetupWindow(hInstance, nCmdShow, szWindowClass, szWindowTitle), result) {
-        TRACE("failed to set up window");
-        return result;
-    }
-
+    /*
     try 
     {
         Capture capture(getDefaultDevice());
@@ -319,25 +245,15 @@ int APIENTRY wWinMain(
         TRACE("error setting up audio capture: " << exception.hresult);
         return exception.hresult;
     }
+    */
+
+    BorderlessWindow window(instance, L"BorderlessWindowClass", L"Dance");
+    OK(window.Create());
+    OK(window.Prepare(showCommand));
+
+    Window::Main(instance);
     
-    HACCEL hAcceleratorTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_DANCE));
-    MSG msg;
+    ::CoUninitialize();
 
-    while (GetMessage(&msg, nullptr, 0, 0))
-    {
-        if (!TranslateAccelerator(msg.hwnd, hAcceleratorTable, &msg))
-        {
-            TranslateMessage(&msg);
-            DispatchMessage(&msg);
-        }
-        else
-        {
-            Window.Engine.Tick();
-        }
-    }
-
-    Window.Engine.Teardown();
-    CoUninitialize();
-
-    return msg.wParam;
+    return 0;
 }

@@ -1,8 +1,8 @@
 #pragma once
 
-#include "framework.h"
-#include "steptimer.h"
-#include "visualizer.h"
+#include "Framework.h"
+#include "Common/StepTimer.h"
+#include "Engine/Visualizer.h"
 
 using Microsoft::WRL::ComPtr;
 
