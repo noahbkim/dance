@@ -14,3 +14,5 @@ struct HWNDDeleter
 
 using InstanceHandle = HINSTANCE;  // We don't own this
 using WindowHandle = std::unique_ptr<HWND, HWNDDeleter>;
+
+using Microsoft::WRL::ComPtr;

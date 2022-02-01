@@ -1,4 +1,5 @@
 #include "Window.h"
+#include "Common/Graphics.h"
 
 Window::Window
 (
@@ -25,14 +26,14 @@ HRESULT Window::Create()
 
 	// https://docs.microsoft.com/en-us/windows/win32/learnwin32/creating-a-window
 	this->window = WindowHandle(::CreateWindowExW(
-		WS_EX_APPWINDOW,
+		this->windowExtensionStyle,
 		this->windowClassName.c_str(),
 		this->windowTitle.c_str(),
-		WS_OVERLAPPEDWINDOW,
-		CW_USEDEFAULT, 
-		CW_USEDEFAULT,
-		CW_USEDEFAULT,
-		CW_USEDEFAULT,
+		this->windowStyle,
+		this->x, 
+		this->y,
+		this->width,
+		this->height,
 		nullptr,
 		nullptr,
 		this->instance,
@@ -61,6 +62,11 @@ HRESULT Window::Prepare(int showCommand)
 	return S_OK;
 }
 
+LRESULT CALLBACK Window::Message(HWND windowHandle, UINT message, WPARAM wParam, LPARAM lParam)
+{
+	return ::DefWindowProcW(windowHandle, message, wParam, lParam);
+}
+
 WNDCLASSEXW Window::Class()
 {
 	WNDCLASSEXW windowClass{};
@@ -85,21 +91,6 @@ HRESULT Window::Register()
 	return result ? S_OK : E_FAIL;
 }
 
-HRESULT Window::Style(DWORD style)
-{
-	DWORD current = static_cast<DWORD>(::GetWindowLongPtrW(this->window.get(), GWL_STYLE));
-	if (style != current)
-	{
-		::SetWindowLongPtrW(this->window.get(), GWL_STYLE, static_cast<LONG>(style));
-
-		// Redraw the frame
-		BET(::SetWindowPos(this->window.get(), nullptr, 0, 0, 0, 0, SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE));
-		::ShowWindow(this->window.get(), SW_SHOW);
-	}
-
-	return S_OK;
-}
-
 LRESULT CALLBACK Window::Global(HWND windowHandle, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	return ::DefWindowProcW(windowHandle, message, wParam, lParam);
@@ -110,23 +101,6 @@ LRESULT CALLBACK Window::Dispatch(HWND windowHandle, UINT message, WPARAM wParam
 	// https://stackoverflow.com/questions/35178779/wndproc-as-class-method
 	Window* self = reinterpret_cast<Window*>(owner);
 	return self->Message(windowHandle, message, wParam, lParam);
-}
-
-LRESULT CALLBACK Window::Message(HWND windowHandle, UINT message, WPARAM wParam, LPARAM lParam)
-{
-	switch (message)
-	{
-	case WM_PAINT:
-		this->Paint();
-		return 0;
-	default:
-		return ::DefWindowProcW(windowHandle, message, wParam, lParam);
-	}
-}
-
-void Window::Paint()
-{
-
 }
 
 void Window::Main(InstanceHandle instance)
@@ -181,15 +155,18 @@ BorderlessWindow::BorderlessWindow
 	std::wstring windowTitle
 )
 	: Window(instance, windowClassName, windowTitle) 
-	, showShadow(true)
 {
 
 }
 
 HRESULT BorderlessWindow::Create()
 {
+	this->windowStyle = WS_POPUP | WS_THICKFRAME | WS_CAPTION | WS_SYSMENU | WS_MAXIMIZEBOX | WS_MINIMIZEBOX;
 	OK(Window::Create());
-	this->Style(WS_POPUP | WS_THICKFRAME | WS_CAPTION | WS_SYSMENU | WS_MAXIMIZEBOX | WS_MINIMIZEBOX);
+
+	// Redraw the frame so the safe area is recalculated
+	BET(::SetWindowPos(this->window.get(), nullptr, 0, 0, 0, 0, SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE));
+
 	return S_OK;
 }
 
@@ -198,24 +175,12 @@ LRESULT CALLBACK BorderlessWindow::Message(HWND windowHandle, UINT message, WPAR
 	switch (message)
 	{
 	case WM_NCCALCSIZE:
-		if (wParam == TRUE) 
-		{
-			auto& params = *reinterpret_cast<NCCALCSIZE_PARAMS*>(lParam);
-			adjustMaximizedClientRectangle(this->window.get(), params.rgrc[0]);
-		}
-		break;
+		return this->Safe(wParam, lParam);
 	case WM_NCHITTEST:
 		return this->Hit(lParam);
 	default:
-		return Window::Message(windowHandle, message, wParam, lParam);
+		return ::DefWindowProcW(windowHandle, message, wParam, lParam);
 	}
-
-	return 0;
-}
-
-void BorderlessWindow::Paint()
-{
-
 }
 
 static constexpr LONG LEFT = 0b0001;
@@ -263,3 +228,182 @@ LRESULT BorderlessWindow::Hit(LPARAM lParam)
 	}
 }
 
+LRESULT BorderlessWindow::Safe(WPARAM wParam, LPARAM lParam)
+{
+	if (wParam == TRUE)
+	{
+		auto& params = *reinterpret_cast<NCCALCSIZE_PARAMS*>(lParam);
+		adjustMaximizedClientRectangle(this->window.get(), params.rgrc[0]);
+	}
+	return 0;
+}
+
+TransparentWindow::TransparentWindow
+(
+	InstanceHandle instance,
+	std::wstring windowClassName,
+	std::wstring windowTitle
+)
+	: BorderlessWindow(instance, windowClassName, windowTitle)
+{
+
+}
+
+HRESULT TransparentWindow::Create()
+{
+	this->windowExtensionStyle = WS_EX_NOREDIRECTIONBITMAP;
+	BorderlessWindow::Create();
+
+	// https://docs.microsoft.com/en-us/archive/msdn-magazine/2014/june/windows-with-c-high-performance-window-layering-using-the-windows-composition-engine
+	OK(::D3D11CreateDevice(
+		nullptr,
+		D3D_DRIVER_TYPE_HARDWARE,
+		nullptr,
+		D3D_DEVICE_CREATION_FLAGS,
+		FEATURE_LEVELS,
+		static_cast<UINT>(std::size(FEATURE_LEVELS)),
+		D3D11_SDK_VERSION,
+		&this->d3dDevice,
+		nullptr,
+		nullptr));
+
+	OK(this->d3dDevice.As(&dxgiDevice));
+	OK(::CreateDXGIFactory2(
+		DXGI_FACTORY_CREATION_FLAGS,
+		__uuidof(this->dxgiFactory),
+		reinterpret_cast<void**>(this->dxgiFactory.GetAddressOf())));
+
+	RECT rectangle{};
+	::GetClientRect(this->window.get(), &rectangle);
+
+	DXGI_SWAP_CHAIN_DESC1 swapChainDescription{};
+	swapChainDescription.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+	swapChainDescription.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+	swapChainDescription.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
+	swapChainDescription.BufferCount = 2;
+	swapChainDescription.SampleDesc.Count = 1;
+	swapChainDescription.AlphaMode = DXGI_ALPHA_MODE_PREMULTIPLIED;
+	swapChainDescription.Width = rectangle.right - rectangle.left;
+	swapChainDescription.Height = rectangle.bottom - rectangle.top;
+
+	// Create the composition swap chain with this description and create a pointer to the Direct3D device
+	OK(this->dxgiFactory->CreateSwapChainForComposition(
+		this->dxgiDevice.Get(),
+		&swapChainDescription,
+		nullptr,
+		this->dxgiSwapChain.GetAddressOf()));
+
+	// Create a single-threaded Direct2D factory with debugging information
+	OK(::D2D1CreateFactory(
+		D2D1_FACTORY_TYPE_SINGLE_THREADED,
+		D2D_FACTORY_CREATION_FLAGS,
+		this->d2dFactory.GetAddressOf()));
+
+	// Create the Direct2D device that links back to the Direct3D device
+	OK(this->d2dFactory->CreateDevice(
+		this->dxgiDevice.Get(),
+		this->d2dDevice.GetAddressOf()));
+
+	// Create the Direct2D device context that is the actual render target
+	// and exposes drawing commands
+	OK(this->d2dDevice->CreateDeviceContext(
+		D2D1_DEVICE_CONTEXT_OPTIONS_NONE,
+		this->d2dDeviceContext.GetAddressOf()));
+
+	// Retrieve the swap chain's back buffer
+	OK(this->dxgiSwapChain->GetBuffer(
+		0, // index
+		__uuidof(this->dxgiSurface),
+		reinterpret_cast<void**>(this->dxgiSurface.GetAddressOf())));
+
+	// Create a Direct2D bitmap that points to the swap chain surface
+	D2D1_BITMAP_PROPERTIES1 properties{};
+	properties.pixelFormat.alphaMode = D2D1_ALPHA_MODE_PREMULTIPLIED;
+	properties.pixelFormat.format = DXGI_FORMAT_B8G8R8A8_UNORM;
+	properties.bitmapOptions = D2D1_BITMAP_OPTIONS_TARGET | D2D1_BITMAP_OPTIONS_CANNOT_DRAW;
+	OK(this->d2dDeviceContext->CreateBitmapFromDxgiSurface(
+		this->dxgiSurface.Get(),
+		properties,
+		this->d2dBitmap.GetAddressOf()));
+
+	OK(::DCompositionCreateDevice(
+		dxgiDevice.Get(),
+		__uuidof(this->dCompositionDevice),
+		reinterpret_cast<void**>(this->dCompositionDevice.GetAddressOf())));
+	OK(this->dCompositionDevice->CreateTargetForHwnd(
+		this->window.get(),
+		true, // Top most
+		this->dCompositionTarget.GetAddressOf()));
+	OK(this->dCompositionDevice->CreateVisual(this->dCompositionVisual.GetAddressOf()));
+
+	OK(this->dCompositionVisual->SetContent(this->dxgiSwapChain.Get()));
+	OK(this->dCompositionTarget->SetRoot(this->dCompositionVisual.Get()));
+	OK(this->dCompositionDevice->Commit());
+}
+
+LRESULT CALLBACK TransparentWindow::Message(HWND windowHandle, UINT message, WPARAM wParam, LPARAM lParam)
+{
+	return BorderlessWindow::Message(windowHandle, message, wParam, lParam);
+}
+
+VisualizerWindow::VisualizerWindow
+(
+	InstanceHandle instance,
+	std::wstring windowClassName,
+	std::wstring windowTitle
+)
+	: TransparentWindow(instance, windowClassName, windowTitle)
+{
+
+}
+
+LRESULT CALLBACK VisualizerWindow::Message(HWND windowHandle, UINT message, WPARAM wParam, LPARAM lParam)
+{
+	switch (message)
+	{
+	case WM_NCCALCSIZE:
+		return this->Safe(wParam, lParam);
+	case WM_NCHITTEST:
+		return this->Hit(lParam);
+	case WM_PAINT:
+		return this->Paint();
+	case WM_DESTROY:
+		return this->Destroy();
+	default:
+		return ::DefWindowProcW(windowHandle, message, wParam, lParam);
+	}
+}
+
+LRESULT VisualizerWindow::Paint()
+{
+	this->d2dDeviceContext->SetTarget(this->d2dBitmap.Get());
+	// Draw something
+	this->d2dDeviceContext->BeginDraw();
+	this->d2dDeviceContext->Clear();
+	ComPtr<ID2D1SolidColorBrush> brush;
+	D2D1_COLOR_F const brushColor = D2D1::ColorF(0.18f,  // red
+		0.55f,  // green
+		0.34f,  // blue
+		0.75f); // alpha
+	this->d2dDeviceContext->CreateSolidColorBrush(brushColor, brush.GetAddressOf());
+	D2D1_POINT_2F const ellipseCenter = D2D1::Point2F(150.0f,  // x
+		150.0f); // y
+	D2D1_ELLIPSE const ellipse = D2D1::Ellipse(ellipseCenter,
+		100.0f,  // x radius
+		100.0f); // y radius
+	this->d2dDeviceContext->FillEllipse(ellipse,
+		brush.Get());
+	this->d2dDeviceContext->EndDraw();
+	// Make the swap chain available to the composition engine
+
+	this->dxgiSwapChain->Present(1,   // sync
+		0); // flags
+
+	return 0;
+}
+
+LRESULT VisualizerWindow::Destroy()
+{
+	::PostQuitMessage(0);
+	return 0;
+}

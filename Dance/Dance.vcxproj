@@ -148,6 +148,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Common\d3dx12.h" />
+    <ClInclude Include="Common\Graphics.h" />
     <ClInclude Include="Common\Read.h" />
     <ClInclude Include="Common\StepTimer.h" />
     <ClInclude Include="Engine\Engine.h" />

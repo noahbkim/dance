@@ -35,7 +35,15 @@
 #include <wingdi.h>
 #include <dxgi1_2.h>
 #include <d3d11_4.h>
+#include <d2d1_2.h>
+#include <d2d1_2helper.h>
+#include <dcomp.h>
 #include <d3dcompiler.h>
+
+#pragma comment(lib, "dxgi.lib")
+#pragma comment(lib, "d3d11.lib")
+#pragma comment(lib, "d2d1.lib")
+#pragma comment(lib, "dcomp.lib")
 
 #include <pix.h>
 #include <directxcolors.h>
@@ -64,8 +72,6 @@
 #include <sstream>
 
 #pragma comment(lib, "comctl32.lib")
-#pragma comment(lib, "dwmapi.lib")
-#pragma comment(lib, "gdi32.lib")
 
 #include "Resource.h"
 
