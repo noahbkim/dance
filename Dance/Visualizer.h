@@ -22,5 +22,5 @@ private:
     bool isHovering = false;
     std::vector<Bar> levels;
 
-    void RenderBorder(ComPtr<ID2D1DeviceContext> context);
+    void RenderBorder();
 };

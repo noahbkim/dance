@@ -243,7 +243,6 @@ HRESULT TransparentWindow::Create()
 {
 	this->windowExtensionStyle = WS_EX_NOREDIRECTIONBITMAP;
 	BorderlessWindow::Create();
-	this->Position(100, 100, 640, 480, SWP_FRAMECHANGED);
 
 	// https://docs.microsoft.com/en-us/archive/msdn-magazine/2014/june/windows-with-c-high-performance-window-layering-using-the-windows-composition-engine
 	OK(::D3D11CreateDevice(
@@ -262,7 +261,7 @@ HRESULT TransparentWindow::Create()
 	OK(::CreateDXGIFactory2(
 		DXGI_FACTORY_CREATION_FLAGS,
 		__uuidof(this->dxgiFactory),
-		reinterpret_cast<void**>(this->dxgiFactory.GetAddressOf())));
+		reinterpret_cast<void**>(this->dxgiFactory.ReleaseAndGetAddressOf())));
 
 	::GetClientRect(this->window.get(), &this->size);
 
@@ -281,24 +280,24 @@ HRESULT TransparentWindow::Create()
 		this->dxgiDevice.Get(),
 		&swapChainDescription,
 		nullptr,
-		this->dxgiSwapChain.GetAddressOf()));
+		this->dxgiSwapChain.ReleaseAndGetAddressOf()));
 
 	// Create a single-threaded Direct2D factory with debugging information
 	OK(::D2D1CreateFactory(
 		D2D1_FACTORY_TYPE_SINGLE_THREADED,
 		D2D_FACTORY_CREATION_FLAGS,
-		this->d2dFactory.GetAddressOf()));
+		this->d2dFactory.ReleaseAndGetAddressOf()));
 
 	// Create the Direct2D device that links back to the Direct3D device
 	OK(this->d2dFactory->CreateDevice(
 		this->dxgiDevice.Get(),
-		this->d2dDevice.GetAddressOf()));
+		this->d2dDevice.ReleaseAndGetAddressOf()));
 
 	// Create the Direct2D device context that is the actual render target
 	// and exposes drawing commands
 	OK(this->d2dDevice->CreateDeviceContext(
 		D2D1_DEVICE_CONTEXT_OPTIONS_NONE,
-		this->d2dDeviceContext.GetAddressOf()));
+		this->d2dDeviceContext.ReleaseAndGetAddressOf()));
 
 	OK(this->CreateSurface());
 	OK(this->CreateBitmap());
@@ -311,14 +310,14 @@ HRESULT TransparentWindow::CreateSurface()
 	OK(this->dxgiSwapChain->GetBuffer(
 		0,
 		__uuidof(this->dxgiSurface),
-		reinterpret_cast<void**>(this->dxgiSurface.GetAddressOf())));
+		reinterpret_cast<void**>(this->dxgiSurface.ReleaseAndGetAddressOf())));
 
 	return S_OK;
 }
 
 HRESULT TransparentWindow::ReleaseSurface()
 {
-	this->dxgiSurface.ReleaseAndGetAddressOf();
+	this->dxgiSurface = nullptr;
 	return S_OK;
 }
 
@@ -332,14 +331,14 @@ HRESULT TransparentWindow::CreateBitmap()
 	OK(this->d2dDeviceContext->CreateBitmapFromDxgiSurface(
 		this->dxgiSurface.Get(),
 		properties,
-		this->d2dBitmap.GetAddressOf()));
+		this->d2dBitmap.ReleaseAndGetAddressOf()));
 
 	return S_OK;
 }
 
 HRESULT TransparentWindow::ReleaseBitmap()
 {
-	this->d2dBitmap.ReleaseAndGetAddressOf();
+	this->d2dBitmap = nullptr;
 	return S_OK;
 }
 
@@ -348,12 +347,12 @@ HRESULT TransparentWindow::CreateComposition()
 	OK(::DCompositionCreateDevice(
 		dxgiDevice.Get(),
 		__uuidof(this->dCompositionDevice),
-		reinterpret_cast<void**>(this->dCompositionDevice.GetAddressOf())));
+		reinterpret_cast<void**>(this->dCompositionDevice.ReleaseAndGetAddressOf())));
 	OK(this->dCompositionDevice->CreateTargetForHwnd(
 		this->window.get(),
 		true, // Top most
-		this->dCompositionTarget.GetAddressOf()));
-	OK(this->dCompositionDevice->CreateVisual(this->dCompositionVisual.GetAddressOf()));
+		this->dCompositionTarget.ReleaseAndGetAddressOf()));
+	OK(this->dCompositionDevice->CreateVisual(this->dCompositionVisual.ReleaseAndGetAddressOf()));
 
 	OK(this->dCompositionVisual->SetContent(this->dxgiSwapChain.Get()));
 	OK(this->dCompositionTarget->SetRoot(this->dCompositionVisual.Get()));
@@ -362,9 +361,17 @@ HRESULT TransparentWindow::CreateComposition()
 	return S_OK;
 }
 
+HRESULT TransparentWindow::Destroy()
+{
+	this->d2dDeviceContext->SetTarget(nullptr);
+	this->dxgiSwapChain.ReleaseAndGetAddressOf();
+	return S_OK;
+}
+
 HRESULT TransparentWindow::Position(int x, int y, int width, int height, UINT flags)
 {
-	BorderlessWindow::Position(x, y, width, height, flags);
+	OK(BorderlessWindow::Position(x, y, width, height, flags));
+	OK(this->Resize());
 	return S_OK;
 }
 
@@ -385,15 +392,8 @@ LRESULT CALLBACK TransparentWindow::Message(HWND windowHandle, UINT message, WPA
 	}
 }
 
-LRESULT TransparentWindow::StartResizeMove()
+HRESULT TransparentWindow::Resize()
 {
-	this->isResizingOrMoving = true;
-	return S_OK;
-}
-
-LRESULT TransparentWindow::FinishResizeMove()
-{
-	this->isResizingOrMoving = false;
 	GetClientRect(this->window.get(), &this->size);
 
 	// Unbind target and release bitmap and DXGI surface because they need to be recreated
@@ -404,7 +404,7 @@ LRESULT TransparentWindow::FinishResizeMove()
 	// https://docs.microsoft.com/en-us/windows/win32/direct2d/direct2d-and-direct3d-interoperation-overview?redirectedfrom=MSDN#resizing-a-dxgi-surface-render-target
 	// Resize the swap chain
 	HRESULT hr = this->dxgiSwapChain->ResizeBuffers(
-		2, 
+		2,
 		this->size.right - this->size.left,
 		this->size.bottom - this->size.top,
 		DXGI_FORMAT_B8G8R8A8_UNORM,
@@ -416,6 +416,19 @@ LRESULT TransparentWindow::FinishResizeMove()
 	OK(this->CreateBitmap());
 
 	return S_OK;
+}
+
+LRESULT TransparentWindow::StartResizeMove()
+{
+	this->isResizingOrMoving = true;
+	return 0;
+}
+
+LRESULT TransparentWindow::FinishResizeMove()
+{
+	this->isResizingOrMoving = false;
+	OK(this->Resize());
+	return 0;
 
 	/*
 	if (hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET)

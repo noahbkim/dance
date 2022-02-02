@@ -48,6 +48,7 @@ public:
     virtual HRESULT Create();
     virtual HRESULT Position(int x, int y, int width, int height, UINT flags);
     virtual LRESULT CALLBACK Message(HWND windowHandle, UINT message, WPARAM wParam, LPARAM lParam);
+    virtual HRESULT Destroy();
 
 protected:
     ComPtr<ID3D11Device> d3dDevice;
@@ -57,8 +58,10 @@ protected:
     ComPtr<ID2D1Factory2> d2dFactory;
     ComPtr<ID2D1Device1> d2dDevice;
     ComPtr<ID2D1DeviceContext> d2dDeviceContext;
+
     ComPtr<IDXGISurface2> dxgiSurface;
     ComPtr<ID2D1Bitmap1> d2dBitmap;
+
     ComPtr<IDCompositionDevice> dCompositionDevice;
     ComPtr<IDCompositionTarget> dCompositionTarget;
     ComPtr<IDCompositionVisual> dCompositionVisual;
@@ -68,6 +71,7 @@ protected:
     HRESULT CreateBitmap();
     HRESULT ReleaseBitmap();
     HRESULT CreateComposition();
+    HRESULT Resize();
 
     bool isResizingOrMoving = false;
     virtual LRESULT StartResizeMove();

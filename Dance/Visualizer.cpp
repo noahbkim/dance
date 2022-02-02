@@ -38,8 +38,10 @@ LRESULT CALLBACK Visualizer::Message(HWND windowHandle, UINT message, WPARAM wPa
 	}
 }
 
-inline void Visualizer::RenderBorder(ComPtr<ID2D1DeviceContext> context)
+inline void Visualizer::RenderBorder()
 {
+	auto context = this->d2dDeviceContext;
+
 	static const FLOAT THICKNESS = 5.0f;
 
 	ComPtr<ID2D1SolidColorBrush> brush;
@@ -70,7 +72,7 @@ LRESULT Visualizer::Render()
 	context->BeginDraw();
 	context->Clear();
 
-	this->RenderBorder(context);
+	this->RenderBorder();
 
 	// End and present
 	context->EndDraw();
@@ -85,6 +87,7 @@ void Visualizer::Update(double delta)
 
 LRESULT Visualizer::Close()
 {
+	this->Destroy();
 	::PostQuitMessage(0);
 	return 0;
 }
