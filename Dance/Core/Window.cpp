@@ -30,10 +30,10 @@ HRESULT Window::Create()
 		this->windowClassName.c_str(),
 		this->windowTitle.c_str(),
 		this->windowStyle,
-		this->x, 
-		this->y,
-		this->width,
-		this->height,
+		CW_USEDEFAULT,
+		CW_USEDEFAULT,
+		CW_USEDEFAULT,
+		CW_USEDEFAULT,
 		nullptr,
 		nullptr,
 		this->instance,
@@ -62,9 +62,17 @@ HRESULT Window::Prepare(int showCommand)
 	return S_OK;
 }
 
-LRESULT CALLBACK Window::Message(HWND windowHandle, UINT message, WPARAM wParam, LPARAM lParam)
+HRESULT Window::Position(int x, int y, int width, int height, UINT flags)
 {
-	return ::DefWindowProcW(windowHandle, message, wParam, lParam);
+	BET(::SetWindowPos(
+		this->window.get(),
+		nullptr,
+		x,
+		y,
+		width,
+		height,
+		flags));
+	return 0;
 }
 
 WNDCLASSEXW Window::Class()
@@ -72,7 +80,7 @@ WNDCLASSEXW Window::Class()
 	WNDCLASSEXW windowClass{};
 	windowClass.cbSize = sizeof(windowClass);
 	windowClass.style = CS_HREDRAW | CS_VREDRAW;
-	windowClass.lpfnWndProc = Window::Global;
+	windowClass.lpfnWndProc = ::DefWindowProcW;
 	windowClass.cbClsExtra = 0;
 	windowClass.cbWndExtra = 0;
 	windowClass.hInstance = this->instance;
@@ -91,7 +99,7 @@ HRESULT Window::Register()
 	return result ? S_OK : E_FAIL;
 }
 
-LRESULT CALLBACK Window::Global(HWND windowHandle, UINT message, WPARAM wParam, LPARAM lParam)
+LRESULT CALLBACK Window::Message(HWND windowHandle, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	return ::DefWindowProcW(windowHandle, message, wParam, lParam);
 }
@@ -101,24 +109,6 @@ LRESULT CALLBACK Window::Dispatch(HWND windowHandle, UINT message, WPARAM wParam
 	// https://stackoverflow.com/questions/35178779/wndproc-as-class-method
 	Window* self = reinterpret_cast<Window*>(owner);
 	return self->Message(windowHandle, message, wParam, lParam);
-}
-
-void Window::Main(InstanceHandle instance)
-{
-	HACCEL acceleratorTable = LoadAccelerators(instance, MAKEINTRESOURCE(IDC_DANCE));
-	MSG message;
-	while (GetMessage(&message, nullptr, 0, 0))
-	{
-		if (!TranslateAccelerator(message.hwnd, acceleratorTable, &message))
-		{
-			TranslateMessage(&message);
-			DispatchMessage(&message);
-		}
-		else
-		{
-			// Tick
-		}
-	}
 }
 
 bool isMaximized(HWND window)
@@ -175,9 +165,9 @@ LRESULT CALLBACK BorderlessWindow::Message(HWND windowHandle, UINT message, WPAR
 	switch (message)
 	{
 	case WM_NCCALCSIZE:
-		return this->Safe(wParam, lParam);
+		return this->CalculateSize(wParam, lParam);
 	case WM_NCHITTEST:
-		return this->Hit(lParam);
+		return this->HitTest(lParam);
 	default:
 		return ::DefWindowProcW(windowHandle, message, wParam, lParam);
 	}
@@ -186,13 +176,13 @@ LRESULT CALLBACK BorderlessWindow::Message(HWND windowHandle, UINT message, WPAR
 static constexpr LONG LEFT = 0b0001;
 static constexpr LONG TOP = 0b0010;
 static constexpr LONG RIGHT = 0b0100;
-static constexpr LONG BOTTOM = 0x1000;
+static constexpr LONG BOTTOM = 0b1000;
 static constexpr LONG TOPLEFT = (TOP | LEFT);
 static constexpr LONG TOPRIGHT = (TOP | RIGHT);
 static constexpr LONG BOTTOMLEFT = (BOTTOM | LEFT);
 static constexpr LONG BOTTOMRIGHT = (BOTTOM | RIGHT);
 
-LRESULT BorderlessWindow::Hit(LPARAM lParam)
+LRESULT BorderlessWindow::HitTest(LPARAM lParam)
 {
 	// https://github.com/melak47/BorderlessWindow/blob/master/BorderlessWindow/src/BorderlessWindow.cpp
 	const POINT border
@@ -208,10 +198,10 @@ LRESULT BorderlessWindow::Hit(LPARAM lParam)
 	LONG y = GET_Y_LPARAM(lParam);
 
 	LONG collision = (
-		BF_LEFT * (x < (rectangle.left + border.x)) |
-		BF_RIGHT * (x >= (rectangle.right - border.x)) |
-		BF_TOP * (y < (rectangle.top + border.y)) |
-		BF_BOTTOM * (y >= (rectangle.bottom - border.y)));
+		LEFT * (x < (rectangle.left + border.x)) |
+		RIGHT * (x >= (rectangle.right - border.x)) |
+		TOP * (y < (rectangle.top + border.y)) |
+		BOTTOM * (y >= (rectangle.bottom - border.y)));
 	
 	switch (collision)
 	{
@@ -228,7 +218,7 @@ LRESULT BorderlessWindow::Hit(LPARAM lParam)
 	}
 }
 
-LRESULT BorderlessWindow::Safe(WPARAM wParam, LPARAM lParam)
+LRESULT BorderlessWindow::CalculateSize(WPARAM wParam, LPARAM lParam)
 {
 	if (wParam == TRUE)
 	{
@@ -253,6 +243,7 @@ HRESULT TransparentWindow::Create()
 {
 	this->windowExtensionStyle = WS_EX_NOREDIRECTIONBITMAP;
 	BorderlessWindow::Create();
+	this->Position(100, 100, 640, 480, SWP_FRAMECHANGED);
 
 	// https://docs.microsoft.com/en-us/archive/msdn-magazine/2014/june/windows-with-c-high-performance-window-layering-using-the-windows-composition-engine
 	OK(::D3D11CreateDevice(
@@ -273,8 +264,7 @@ HRESULT TransparentWindow::Create()
 		__uuidof(this->dxgiFactory),
 		reinterpret_cast<void**>(this->dxgiFactory.GetAddressOf())));
 
-	RECT rectangle{};
-	::GetClientRect(this->window.get(), &rectangle);
+	::GetClientRect(this->window.get(), &this->size);
 
 	DXGI_SWAP_CHAIN_DESC1 swapChainDescription{};
 	swapChainDescription.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
@@ -283,8 +273,8 @@ HRESULT TransparentWindow::Create()
 	swapChainDescription.BufferCount = 2;
 	swapChainDescription.SampleDesc.Count = 1;
 	swapChainDescription.AlphaMode = DXGI_ALPHA_MODE_PREMULTIPLIED;
-	swapChainDescription.Width = rectangle.right - rectangle.left;
-	swapChainDescription.Height = rectangle.bottom - rectangle.top;
+	swapChainDescription.Width = this->size.right - this->size.left;
+	swapChainDescription.Height = this->size.bottom - this->size.top;
 
 	// Create the composition swap chain with this description and create a pointer to the Direct3D device
 	OK(this->dxgiFactory->CreateSwapChainForComposition(
@@ -310,12 +300,30 @@ HRESULT TransparentWindow::Create()
 		D2D1_DEVICE_CONTEXT_OPTIONS_NONE,
 		this->d2dDeviceContext.GetAddressOf()));
 
+	OK(this->CreateSurface());
+	OK(this->CreateBitmap());
+	OK(this->CreateComposition());
+}
+
+HRESULT TransparentWindow::CreateSurface()
+{
 	// Retrieve the swap chain's back buffer
 	OK(this->dxgiSwapChain->GetBuffer(
-		0, // index
+		0,
 		__uuidof(this->dxgiSurface),
 		reinterpret_cast<void**>(this->dxgiSurface.GetAddressOf())));
 
+	return S_OK;
+}
+
+HRESULT TransparentWindow::ReleaseSurface()
+{
+	this->dxgiSurface.ReleaseAndGetAddressOf();
+	return S_OK;
+}
+
+HRESULT TransparentWindow::CreateBitmap()
+{
 	// Create a Direct2D bitmap that points to the swap chain surface
 	D2D1_BITMAP_PROPERTIES1 properties{};
 	properties.pixelFormat.alphaMode = D2D1_ALPHA_MODE_PREMULTIPLIED;
@@ -326,6 +334,17 @@ HRESULT TransparentWindow::Create()
 		properties,
 		this->d2dBitmap.GetAddressOf()));
 
+	return S_OK;
+}
+
+HRESULT TransparentWindow::ReleaseBitmap()
+{
+	this->d2dBitmap.ReleaseAndGetAddressOf();
+	return S_OK;
+}
+
+HRESULT TransparentWindow::CreateComposition()
+{
 	OK(::DCompositionCreateDevice(
 		dxgiDevice.Get(),
 		__uuidof(this->dCompositionDevice),
@@ -339,71 +358,74 @@ HRESULT TransparentWindow::Create()
 	OK(this->dCompositionVisual->SetContent(this->dxgiSwapChain.Get()));
 	OK(this->dCompositionTarget->SetRoot(this->dCompositionVisual.Get()));
 	OK(this->dCompositionDevice->Commit());
+
+	return S_OK;
+}
+
+HRESULT TransparentWindow::Position(int x, int y, int width, int height, UINT flags)
+{
+	BorderlessWindow::Position(x, y, width, height, flags);
+	return S_OK;
 }
 
 LRESULT CALLBACK TransparentWindow::Message(HWND windowHandle, UINT message, WPARAM wParam, LPARAM lParam)
 {
-	return BorderlessWindow::Message(windowHandle, message, wParam, lParam);
-}
-
-VisualizerWindow::VisualizerWindow
-(
-	InstanceHandle instance,
-	std::wstring windowClassName,
-	std::wstring windowTitle
-)
-	: TransparentWindow(instance, windowClassName, windowTitle)
-{
-
-}
-
-LRESULT CALLBACK VisualizerWindow::Message(HWND windowHandle, UINT message, WPARAM wParam, LPARAM lParam)
-{
 	switch (message)
 	{
 	case WM_NCCALCSIZE:
-		return this->Safe(wParam, lParam);
+		return this->CalculateSize(wParam, lParam);
 	case WM_NCHITTEST:
-		return this->Hit(lParam);
-	case WM_PAINT:
-		return this->Paint();
-	case WM_DESTROY:
-		return this->Destroy();
+		return this->HitTest(lParam);
+	case WM_ENTERSIZEMOVE:
+		return this->StartResizeMove();
+	case WM_EXITSIZEMOVE:
+		return this->FinishResizeMove();
 	default:
 		return ::DefWindowProcW(windowHandle, message, wParam, lParam);
 	}
 }
 
-LRESULT VisualizerWindow::Paint()
+LRESULT TransparentWindow::StartResizeMove()
 {
-	this->d2dDeviceContext->SetTarget(this->d2dBitmap.Get());
-	// Draw something
-	this->d2dDeviceContext->BeginDraw();
-	this->d2dDeviceContext->Clear();
-	ComPtr<ID2D1SolidColorBrush> brush;
-	D2D1_COLOR_F const brushColor = D2D1::ColorF(0.18f,  // red
-		0.55f,  // green
-		0.34f,  // blue
-		0.75f); // alpha
-	this->d2dDeviceContext->CreateSolidColorBrush(brushColor, brush.GetAddressOf());
-	D2D1_POINT_2F const ellipseCenter = D2D1::Point2F(150.0f,  // x
-		150.0f); // y
-	D2D1_ELLIPSE const ellipse = D2D1::Ellipse(ellipseCenter,
-		100.0f,  // x radius
-		100.0f); // y radius
-	this->d2dDeviceContext->FillEllipse(ellipse,
-		brush.Get());
-	this->d2dDeviceContext->EndDraw();
-	// Make the swap chain available to the composition engine
-
-	this->dxgiSwapChain->Present(1,   // sync
-		0); // flags
-
-	return 0;
+	this->isResizingOrMoving = true;
+	return S_OK;
 }
 
-LRESULT VisualizerWindow::Destroy()
+LRESULT TransparentWindow::FinishResizeMove()
 {
-	::PostQuitMessage(0);
-	return 0;
+	this->isResizingOrMoving = false;
+	GetClientRect(this->window.get(), &this->size);
+
+	// Unbind target and release bitmap and DXGI surface because they need to be recreated
+	this->d2dDeviceContext->SetTarget(nullptr);
+	OK(this->ReleaseBitmap());
+	OK(this->ReleaseSurface());
+
+	// https://docs.microsoft.com/en-us/windows/win32/direct2d/direct2d-and-direct3d-interoperation-overview?redirectedfrom=MSDN#resizing-a-dxgi-surface-render-target
+	// Resize the swap chain
+	HRESULT hr = this->dxgiSwapChain->ResizeBuffers(
+		2, 
+		this->size.right - this->size.left,
+		this->size.bottom - this->size.top,
+		DXGI_FORMAT_B8G8R8A8_UNORM,
+		0);
+	OK(hr);
+
+	// Recreate the DXGI surface and bind the bitmap that we releasesd prior
+	OK(this->CreateSurface());
+	OK(this->CreateBitmap());
+
+	return S_OK;
+
+	/*
+	if (hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET)
+	{
+		// If the device was removed for any reason, a new device and swap chain will need to be created.
+		OnDeviceLost();
+
+		// Everything is set up now. Do not continue execution of this method. OnDeviceLost will reenter this method 
+		// and correctly set up the new device.
+		return;
+	}
+	*/
 }

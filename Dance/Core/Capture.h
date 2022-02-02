@@ -7,6 +7,22 @@
 
 #pragma comment(lib, "Winmm.lib")
 
+/*
+try
+{
+    Capture capture(getDefaultDevice());
+    capture.Start();
+    capture.Debug();
+    capture.Stop();
+}
+catch (CaptureException& exception)
+{
+    TRACE("error setting up audio capture: " << exception.hresult);
+    return exception.hresult;
+}
+*/
+
+
 // A REFERENCE_TIME increment is 100 nanoseconds
 #define ONE_SECOND (1e9 / 1e2)
 #define ONE_MILLISECOND (1e9 / 1e3 / 1e2)

@@ -1,11 +1,5 @@
-// Dance.cpp : Defines the entry point for the application.
-//
-
-#include <time.h>
-
 #include "Framework.h"
-#include "Core/Window.h"
-#include "Engine/Engine.h"
+#include "Visualizer.h"
 
 // Indicates to hybrid graphics systems to prefer the discrete part by default
 extern "C"
@@ -33,27 +27,26 @@ int APIENTRY wWinMain(
         return result;
     }
 
-    /*
-    try 
-    {
-        Capture capture(getDefaultDevice());
-        capture.Start();
-        capture.Debug();
-        capture.Stop();
-    }
-    catch (CaptureException& exception) 
-    {
-        TRACE("error setting up audio capture: " << exception.hresult);
-        return exception.hresult;
-    }
-    */
+    Visualizer visualizer(instance, L"VisualizerWindow", L"Dance");
+    OK(visualizer.Create());
+//    OK(visualizer.Position(100, 100, 640, 480, SWP_FRAMECHANGED));
+    OK(visualizer.Prepare(showCommand));
 
-    VisualizerWindow window(instance, L"VisualizerWindow", L"Dance");
-    OK(window.Create());
-    OK(window.Prepare(showCommand));
+    HACCEL acceleratorTable = LoadAccelerators(instance, MAKEINTRESOURCE(IDC_DANCE));
+    MSG message;
+    while (GetMessage(&message, nullptr, 0, 0))
+    {
+        if (!TranslateAccelerator(message.hwnd, acceleratorTable, &message))
+        {
+            ::TranslateMessage(&message);
+            DispatchMessage(&message);
+        }
+        else
+        {
+            visualizer.Tick();
+        }
+    }
 
-    Window::Main(instance);
-    
     ::CoUninitialize();
 
     return 0;
