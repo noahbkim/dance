@@ -159,6 +159,14 @@
     <ClInclude Include="Engine\Common\Primitive.h" />
     <ClInclude Include="Engine\D3D\Shorthand.h" />
     <ClInclude Include="Framework.h" />
+    <ClInclude Include="Mathematics.h" />
+    <ClInclude Include="Mathematics\Matrix3.h" />
+    <ClInclude Include="Mathematics\Matrix4.h" />
+    <ClInclude Include="Mathematics\Quaternion.h" />
+    <ClInclude Include="Mathematics\Utility.h" />
+    <ClInclude Include="Mathematics\Vector2.h" />
+    <ClInclude Include="Mathematics\Vector3.h" />
+    <ClInclude Include="Mathematics\Vector4.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="TargetVersion.h" />
     <ClInclude Include="Visualizer.h" />

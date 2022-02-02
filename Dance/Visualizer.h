@@ -4,6 +4,7 @@
 #include "Core/Runtime.h"
 #include "Engine/Common/Primitive.h"
 #include "Engine/Common/Buffer.h"
+#include "Engine/Common/Shader.h"
 
 struct Bar
 {
@@ -27,13 +28,7 @@ private:
     std::vector<Bar> levels;
 
     VertexBuffer<PositionColorVertex> vertices;
-
-    ID3D11InputLayout* inputLayout;
-    ID3D11PixelShader* pixelShader;
-    ID3D11VertexShader* vertexShader;
-    UINT numVerts;
-    UINT stride;
-    UINT offset;
+    Shader shader;
 
     void RenderBorder();
 };

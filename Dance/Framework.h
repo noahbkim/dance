@@ -95,6 +95,10 @@ public:
         : result(result)
         , std::runtime_error("unexpected HRESULT " + std::to_string(result)) {}
 
+    ComError(HRESULT result, const std::string& what)
+        : result(result)
+        , std::runtime_error(what) {}
+
 private:
     const HRESULT result;
 };
@@ -105,7 +109,7 @@ private:
 #define OKE(call) if (HRESULT result = (call); result != S_OK) { throw ComError(result); }
 #define BETE(call) if (BOOL result = (call); !result) { throw ComError(E_FAIL); }
 
-#define GUARD(call, name) if (HRESULT name = (call); name != result)
+#define GUARD(call, name) if (HRESULT name = (call); name != S_OK)
 
 inline void ThrowIfFailed(HRESULT hr)
 {

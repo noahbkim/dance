@@ -1,5 +1,12 @@
 #include "Visualizer.h"
 #include "Engine/Common/Buffer.h"
+#include "Mathematics.h"
+
+class Renderable
+{
+private:
+	
+};
 
 Visualizer::Visualizer
 (
@@ -22,22 +29,6 @@ HRESULT Visualizer::Create()
 {
 	TransparentWindow3D::Create();
 
-	// Setup shader
-	ID3DBlob* vsBlob;
-	{
-		ID3DBlob* shaderCompileErrorsBlob;
-		OK(::D3DCompileFromFile(L"Shader/Shader.hlsl", nullptr, nullptr, "vs_main", "vs_5_0", 0, 0, &vsBlob, &shaderCompileErrorsBlob));
-		OK(this->d3dDevice->CreateVertexShader(vsBlob->GetBufferPointer(), vsBlob->GetBufferSize(), nullptr, &vertexShader));
-	}
-
-	{
-		ID3DBlob* psBlob;
-		ID3DBlob* shaderCompileErrorsBlob;
-		OK(::D3DCompileFromFile(L"Shader/Shader.hlsl", nullptr, nullptr, "ps_main", "ps_5_0", 0, 0, &psBlob, &shaderCompileErrorsBlob));
-		OK(this->d3dDevice->CreatePixelShader(psBlob->GetBufferPointer(), psBlob->GetBufferSize(), nullptr, &pixelShader));
-		psBlob->Release();
-	}
-
 	{
 		D3D11_INPUT_ELEMENT_DESC inputElementDesc[] =
 		{
@@ -45,13 +36,7 @@ HRESULT Visualizer::Create()
 			{ "COL", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 }
 		};
 
-		OK(d3dDevice->CreateInputLayout(
-			inputElementDesc, 
-			ARRAYSIZE(inputElementDesc), 
-			vsBlob->GetBufferPointer(),
-			vsBlob->GetBufferSize(), 
-			&inputLayout));
-		vsBlob->Release();
+		this->shader = Shader(this->d3dDevice.Get(), L"Shader/Shader.hlsl", inputElementDesc, 2);
 	}
 
 	{
@@ -132,9 +117,7 @@ LRESULT Visualizer::Render()
 	this->d3dDeviceContext->OMSetRenderTargets(1, this->d3dBackBufferView.GetAddressOf(), nullptr);
 
 	this->d3dDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	this->d3dDeviceContext->IASetInputLayout(inputLayout);
-	this->d3dDeviceContext->VSSetShader(vertexShader, nullptr, 0);
-	this->d3dDeviceContext->PSSetShader(pixelShader, nullptr, 0);
+	this->shader.Apply();
 	this->vertices.Set();
 	this->vertices.Draw();
 	
@@ -149,9 +132,6 @@ void Visualizer::Update(double delta)
 
 LRESULT Visualizer::Close()
 {
-	this->inputLayout->Release();
-	this->pixelShader->Release();
-	this->vertexShader->Release();
 	this->Destroy();
 	::PostQuitMessage(0);
 	return 0;
