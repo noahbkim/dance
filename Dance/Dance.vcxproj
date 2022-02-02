@@ -154,8 +154,10 @@
     <ClInclude Include="Core\Capture.h" />
     <ClInclude Include="Core\Runtime.h" />
     <ClInclude Include="Core\Window.h" />
-    <ClInclude Include="Engine\Engine.h" />
-    <ClInclude Include="Engine\Visualizer.h" />
+    <ClInclude Include="Engine\Common\Buffer.h" />
+    <ClInclude Include="Engine\Common\Shader.h" />
+    <ClInclude Include="Engine\Common\Primitive.h" />
+    <ClInclude Include="Engine\D3D\Shorthand.h" />
     <ClInclude Include="Framework.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="TargetVersion.h" />
@@ -164,7 +166,6 @@
   <ItemGroup>
     <ClCompile Include="Core\Runtime.cpp" />
     <ClCompile Include="Core\Window.cpp" />
-    <ClCompile Include="Engine\Engine.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="Visualizer.cpp" />
   </ItemGroup>

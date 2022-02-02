@@ -22,3 +22,13 @@ constexpr D3D_FEATURE_LEVEL FEATURE_LEVELS[] =
     D3D_FEATURE_LEVEL_9_2,
     D3D_FEATURE_LEVEL_9_1,
 };
+
+void dxgiDebug()
+{
+    ComPtr<IDXGIDebug> dxgiDebug;
+    DXGIGetDebugInterface1(
+        0,
+        __uuidof(dxgiDebug),
+        reinterpret_cast<void**>(dxgiDebug.ReleaseAndGetAddressOf()));
+    dxgiDebug->ReportLiveObjects(DXGI_DEBUG_ALL, DXGI_DEBUG_RLO_ALL);
+}

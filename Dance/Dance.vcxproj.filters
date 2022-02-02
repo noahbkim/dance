@@ -24,12 +24,6 @@
     <ClInclude Include="Resource.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Engine.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\Visualizer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Common\d3dx12.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -54,12 +48,21 @@
     <ClInclude Include="Core\Window.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\D3D\Shorthand.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Common\Buffer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Common\Shader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Common\Primitive.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Main.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Engine\Engine.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Core\Window.cpp">

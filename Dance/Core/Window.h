@@ -58,10 +58,8 @@ protected:
     ComPtr<ID2D1Factory2> d2dFactory;
     ComPtr<ID2D1Device1> d2dDevice;
     ComPtr<ID2D1DeviceContext> d2dDeviceContext;
-
     ComPtr<IDXGISurface2> dxgiSurface;
     ComPtr<ID2D1Bitmap1> d2dBitmap;
-
     ComPtr<IDCompositionDevice> dCompositionDevice;
     ComPtr<IDCompositionTarget> dCompositionTarget;
     ComPtr<IDCompositionVisual> dCompositionVisual;
@@ -71,11 +69,29 @@ protected:
     HRESULT CreateBitmap();
     HRESULT ReleaseBitmap();
     HRESULT CreateComposition();
-    HRESULT Resize();
+    virtual HRESULT Resize();
 
     bool isResizingOrMoving = false;
     virtual LRESULT StartResizeMove();
     virtual LRESULT FinishResizeMove();
 
     RECT size;
+};
+
+class TransparentWindow3D : public TransparentWindow
+{
+public:
+    TransparentWindow3D(InstanceHandle instance, std::wstring windowClassName, std::wstring windowTitle);
+    virtual HRESULT Create();
+
+protected:
+    ComPtr<ID3D11DeviceContext> d3dDeviceContext;
+    ComPtr<ID3D11RenderTargetView> d3dBackBufferView;
+    ComPtr<ID3D11RenderTargetView> d3dRenderTargetView;
+    ComPtr<ID3D11DepthStencilView> d3dDepthStencilView;
+    ComPtr<ID3D11SamplerState> d3dSamplerState;
+
+    HRESULT CreateRenderTarget();
+    HRESULT ReleaseRenderTarget();
+    virtual HRESULT Resize();
 };

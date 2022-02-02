@@ -364,7 +364,6 @@ HRESULT TransparentWindow::CreateComposition()
 HRESULT TransparentWindow::Destroy()
 {
 	this->d2dDeviceContext->SetTarget(nullptr);
-	this->dxgiSwapChain.ReleaseAndGetAddressOf();
 	return S_OK;
 }
 
@@ -394,12 +393,12 @@ LRESULT CALLBACK TransparentWindow::Message(HWND windowHandle, UINT message, WPA
 
 HRESULT TransparentWindow::Resize()
 {
-	GetClientRect(this->window.get(), &this->size);
-
 	// Unbind target and release bitmap and DXGI surface because they need to be recreated
 	this->d2dDeviceContext->SetTarget(nullptr);
 	OK(this->ReleaseBitmap());
 	OK(this->ReleaseSurface());
+
+	GetClientRect(this->window.get(), &this->size);
 
 	// https://docs.microsoft.com/en-us/windows/win32/direct2d/direct2d-and-direct3d-interoperation-overview?redirectedfrom=MSDN#resizing-a-dxgi-surface-render-target
 	// Resize the swap chain
@@ -414,7 +413,6 @@ HRESULT TransparentWindow::Resize()
 	// Recreate the DXGI surface and bind the bitmap that we releasesd prior
 	OK(this->CreateSurface());
 	OK(this->CreateBitmap());
-
 	return S_OK;
 }
 
@@ -441,4 +439,58 @@ LRESULT TransparentWindow::FinishResizeMove()
 		return;
 	}
 	*/
+}
+
+TransparentWindow3D::TransparentWindow3D
+(
+	InstanceHandle instance,
+	std::wstring windowClassName,
+	std::wstring windowTitle
+)
+	: TransparentWindow(instance, windowClassName, windowTitle)
+{
+
+}
+
+HRESULT TransparentWindow3D::Create()
+{
+	OK(TransparentWindow::Create());
+
+	// https://docs.microsoft.com/en-us/windows/win32/direct2d/direct2d-and-direct3d-interoperation-overview
+	this->d3dDevice->GetImmediateContext(this->d3dDeviceContext.ReleaseAndGetAddressOf());
+	this->CreateRenderTarget();
+	return S_OK;
+}
+
+
+HRESULT TransparentWindow3D::CreateRenderTarget()
+{
+	// Build the backbuffer
+	ComPtr<ID3D11Texture2D> backBufferTexture;
+	OK(this->dxgiSwapChain->GetBuffer(
+		0,
+		__uuidof(backBufferTexture),
+		reinterpret_cast<void**>(backBufferTexture.ReleaseAndGetAddressOf())));
+
+	// Set it up as a render target
+	OK(this->d3dDevice->CreateRenderTargetView(
+		backBufferTexture.Get(),
+		nullptr,
+		this->d3dBackBufferView.ReleaseAndGetAddressOf()));
+
+	return S_OK;
+}
+
+HRESULT TransparentWindow3D::ReleaseRenderTarget()
+{
+	this->d3dBackBufferView = nullptr;
+	return S_OK;
+}
+
+HRESULT TransparentWindow3D::Resize()
+{
+	OK(this->ReleaseRenderTarget());
+	OK(TransparentWindow::Resize());
+	OK(this->CreateRenderTarget());
+	return S_OK;
 }
