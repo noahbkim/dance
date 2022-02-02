@@ -6,53 +6,71 @@
 const UINT ZERO = 0;
 
 template<typename T>
-class VertexBuffer
+class Buffer
 {
 public:
-    VertexBuffer() : deviceContext(nullptr), buffer(nullptr), count(0) {}
+    UINT Count;
 
-	VertexBuffer(ID3D11Device* device, UINT count, T* data) : count(count)
+    Buffer(UINT count) : Count(count) {}
+
+    inline UINT Size() const
+    {
+        return this->Count * sizeof(T);
+    }
+
+    inline UINT Stride() const
+    {
+        return static_cast<UINT>(sizeof(T));
+    }
+};
+
+
+template<typename T>
+class VertexBuffer : public Buffer<T>
+{
+public:
+    VertexBuffer() : Buffer<T>(0), deviceContext(nullptr), buffer(nullptr) {}
+
+	VertexBuffer(ID3D11Device* device, UINT count, const T* data) : Buffer<T>(count)
     {
         device->GetImmediateContext(this->deviceContext.ReleaseAndGetAddressOf());
         D3D11_BUFFER_DESC bufferDescriptor{};
         bufferDescriptor.Usage = D3D11_USAGE_IMMUTABLE;
         bufferDescriptor.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-        bufferDescriptor.ByteWidth = count * sizeof(T);
+        bufferDescriptor.ByteWidth = this->Size();
         D3D11_SUBRESOURCE_DATA subresourceData = { data };
         OKE(device->CreateBuffer(&bufferDescriptor, &subresourceData, this->buffer.ReleaseAndGetAddressOf()));
     }
 
     inline void Set() const
     {
-        UINT stride = sizeof(T);
+        UINT stride = this->Stride();
         this->deviceContext->IASetVertexBuffers(0, 1, this->buffer.GetAddressOf(), &stride, &ZERO);
     }
 
     inline void Draw() const
     {
-        this->deviceContext->Draw(this->count, 0);
+        this->deviceContext->Draw(this->Count, 0);
     }
 
 private:
     ComPtr<ID3D11DeviceContext> deviceContext;
     ComPtr<ID3D11Buffer> buffer;
-    UINT count;
 };
 
-
 template<typename T, DXGI_FORMAT TF>
-class IndexBuffer
+class IndexBuffer : public Buffer<T>
 {
 public:
-    IndexBuffer() : deviceContext(nullptr), buffer(nullptr), count(0) {}
+    IndexBuffer() : Buffer<T>(0), deviceContext(nullptr), buffer(nullptr) {}
 
-    IndexBuffer(ID3D11Device* device, UINT count, T* data) : count(count)
+    IndexBuffer(ID3D11Device* device, UINT count, const T* data) : Buffer<T>(count)
     {
         device->GetImmediateContext(this->deviceContext.ReleaseAndGetAddressOf());
         D3D11_BUFFER_DESC bufferDescriptor{};
         bufferDescriptor.Usage = D3D11_USAGE_IMMUTABLE;
         bufferDescriptor.BindFlags = D3D11_BIND_INDEX_BUFFER;
-        bufferDescriptor.ByteWidth = count * sizeof(T);
+        bufferDescriptor.ByteWidth = this->Size();
         D3D11_SUBRESOURCE_DATA subresourceData = { data };
         OKE(device->CreateBuffer(&bufferDescriptor, &subresourceData, this->buffer.ReleaseAndGetAddressOf()));
     }
@@ -70,14 +88,16 @@ public:
 private:
     ComPtr<ID3D11DeviceContext> deviceContext;
     ComPtr<ID3D11Buffer> buffer;
-    UINT count;
 };
 
 template<typename I, DXGI_FORMAT IF, typename V>
 class IndexedVertexBuffer
 {
 public:
-    IndexedVertexBuffer() : indices(), vertices() {}
+    IndexBuffer<I, IF> Indices;
+    VertexBuffer<V> Vertices;
+
+    IndexedVertexBuffer() : Indices(), Vertices() {}
 
     IndexedVertexBuffer
     (
@@ -87,22 +107,72 @@ public:
         UINT vertexCount,
         V* vertexData
     )
-        : indices(device, indexCount, indexData)
-        , vertices(device, vertexCount, vertexData)
+        : Indices(device, indexCount, indexData)
+        , Vertices(device, vertexCount, vertexData)
     {}
 
     inline void Set() const
     {
-        this->vertices.Set();
-        this->indices.Set();
+        this->Indices.Set();
+        this->Vertices.Set();
     }
 
     inline void Draw() const
     {
-        this->indices.Draw();
+        this->Indices.Draw();
+    }
+};
+
+template<typename T>
+class ConstantBuffer : public Buffer<T>
+{
+public:
+    ConstantBuffer() : Buffer<T>(0), deviceContext(nullptr), buffer(nullptr) {}
+
+    ConstantBuffer(ID3D11Device* device, UINT count, const T* data) : Buffer<T>(count)
+    {
+        device->GetImmediateContext(this->deviceContext.ReleaseAndGetAddressOf());
+        D3D11_BUFFER_DESC bufferDescriptor{};
+        bufferDescriptor.Usage = D3D11_USAGE_IMMUTABLE;
+        bufferDescriptor.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+        bufferDescriptor.ByteWidth = this->Size();
+        D3D11_SUBRESOURCE_DATA subresourceData = { data };
+        OKE(device->CreateBuffer(&bufferDescriptor, &subresourceData, this->buffer.ReleaseAndGetAddressOf()));
+    }
+
+    inline void Set(UINT index, UINT count) const
+    {
+        this->deviceContext->VSSetConstantBuffers(index, count, this->buffer.GetAddressOf());
+        this->deviceContext->PSSetConstantBuffers(index, count, this->buffer.GetAddressOf());
     }
 
 private:
-    IndexBuffer<I, IF> indices;
-    VertexBuffer<V> vertices;
+    ComPtr<ID3D11DeviceContext> deviceContext;
+    ComPtr<ID3D11Buffer> buffer;
+};
+
+template<typename T>
+class MutableConstantBuffer : public ConstantBuffer<T>
+{
+    MutableConstantBuffer() : ConstantBuffer<T>() {}
+
+    MutableConstantBuffer(ID3D11Device* device, UINT count, const T* data) : Buffer<T>(count)
+    {
+        device->GetImmediateContext(this->deviceContext.ReleaseAndGetAddressOf());
+        D3D11_BUFFER_DESC bufferDescriptor{};
+        bufferDescriptor.Usage = D3D11_USAGE_DYNAMIC;
+        bufferDescriptor.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+        bufferDescriptor.CPUAccessFlags = D3D11_USAGE_DYNAMIC;
+        bufferDescriptor.ByteWidth = count * sizeof(T);
+        D3D11_SUBRESOURCE_DATA subresourceData = { data };
+        OKE(device->CreateBuffer(&bufferDescriptor, &subresourceData, this->buffer.ReleaseAndGetAddressOf()));
+    }
+
+    inline void Write(const T* data) const
+    {
+        D3D11_MAPPED_SUBRESOURCE mappedSubresource;
+        OKE(this->deviceContext->Map(this->buffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedSubresource));
+        memcpy(mappedSubresource.pData, data, this->Size());
+        this->deviceContext->Unmap(this->buffer.Get(), 0);
+    }
 };

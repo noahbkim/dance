@@ -130,11 +130,11 @@ LRESULT Visualizer::Render()
 	D3D11_VIEWPORT viewport = { 0.0f, 0.0f, (FLOAT)(this->size.right - this->size.left), (FLOAT)(this->size.bottom - this->size.top), 0.0f, 1.0f };
 	this->d3dDeviceContext->RSSetViewports(1, &viewport);
 	this->d3dDeviceContext->OMSetRenderTargets(1, this->d3dBackBufferView.GetAddressOf(), nullptr);
+
 	this->d3dDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	this->d3dDeviceContext->IASetInputLayout(inputLayout);
 	this->d3dDeviceContext->VSSetShader(vertexShader, nullptr, 0);
 	this->d3dDeviceContext->PSSetShader(pixelShader, nullptr, 0);
-
 	this->vertices.Set();
 	this->vertices.Draw();
 	
