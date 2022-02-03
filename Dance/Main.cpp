@@ -29,7 +29,7 @@ int APIENTRY wWinMain(
 
     Visualizer visualizer(instance, L"VisualizerWindow", L"Dance");
     OK(visualizer.Create());
-    OK(visualizer.Position(100, 100, 640, 480, SWP_FRAMECHANGED));
+    OK(visualizer.Position(100, 100, 480, 480, SWP_FRAMECHANGED));
     OK(visualizer.Prepare(showCommand));
 
     HACCEL acceleratorTable = LoadAccelerators(instance, MAKEINTRESOURCE(IDC_DANCE));

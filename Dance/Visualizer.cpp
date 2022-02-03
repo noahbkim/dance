@@ -90,6 +90,15 @@ LRESULT CALLBACK Visualizer::Message(HWND windowHandle, UINT message, WPARAM wPa
 		return this->StartResizeMove();
 	case WM_EXITSIZEMOVE:
 		return this->FinishResizeMove();
+	case WM_MOUSEHOVER:
+	case WM_NCMOUSEHOVER:
+		return this->MouseHover(wParam, lParam);
+	case WM_MOUSELEAVE:
+	case WM_NCMOUSELEAVE:
+		return this->MouseLeave(wParam, lParam);
+	case WM_MOUSEMOVE:
+	case WM_NCMOUSEMOVE:
+		return this->MouseMove(wParam, lParam);
 	case WM_PAINT:
 		return this->Render();
 	case WM_DESTROY:
@@ -103,24 +112,20 @@ inline void Visualizer::RenderBorder()
 {
 	auto context = this->d2dDeviceContext;
 
-	static const FLOAT THICKNESS = 5.0f;
-
 	ComPtr<ID2D1SolidColorBrush> brush;
 	D2D1_COLOR_F const color = D2D1::ColorF(1.0f, 1.0f, 1.0f, 0.75f);
 	context->CreateSolidColorBrush(color, brush.GetAddressOf());
 
+	static const FLOAT THICKNESS = 2.0f;
 	const FLOAT w = this->size.right - this->size.left;
 	const FLOAT h = this->size.bottom - this->size.top;
 
 	D2D1_RECT_F stroke{ 0, 0, w, THICKNESS };
 	context->FillRectangle(stroke, brush.Get());
-
 	stroke = { 0, h - THICKNESS, w, h };
 	context->FillRectangle(stroke, brush.Get());
-
 	stroke = { 0, THICKNESS, THICKNESS, h - THICKNESS };
 	context->FillRectangle(stroke, brush.Get());
-
 	stroke = { w - THICKNESS, THICKNESS, w, h - THICKNESS };
 	context->FillRectangle(stroke, brush.Get());
 }
@@ -133,7 +138,10 @@ LRESULT Visualizer::Render()
 	context->BeginDraw();
 	context->Clear();
 
-	this->RenderBorder();
+	if (this->mouseHovering || this->isResizingOrMoving)
+	{
+		this->RenderBorder();
+	}
 
 	// End and present
 	context->EndDraw();
@@ -158,10 +166,42 @@ LRESULT Visualizer::Render()
 void Visualizer::Update(double delta)
 {
 	this->theta += delta;
-	this->cube.Transform() = Matrix4F::Scale(100.0f) 
+	this->cube.Transform() = Matrix4F::Scale(200.0f) 
 		* Matrix4F::YRotation(this->theta) 
 		* Matrix4F::XRotation(0.45f * this->theta)
 		* Matrix4F::ZRotation(0.85f * this->theta);
+}
+
+LRESULT Visualizer::MouseMove(WPARAM wParam, LPARAM lParam)
+{
+	this->mouseHovering = true;
+	if (!this->mouseTracking)
+	{
+		TRACKMOUSEEVENT tracking{};
+		tracking.cbSize = sizeof(tracking);
+		tracking.dwFlags = TME_NONCLIENT | TME_LEAVE;
+		tracking.hwndTrack = this->window.get();
+		tracking.dwHoverTime = HOVER_DEFAULT;
+		TrackMouseEvent(&tracking);
+		this->mouseTracking = true;
+		TRACE("tracking");
+	}
+	return 0;
+}
+
+LRESULT Visualizer::MouseHover(WPARAM wParam, LPARAM lParam)
+{
+	TRACE("hover");
+	this->mouseHovering = true;
+	return 0;
+}
+
+LRESULT Visualizer::MouseLeave(WPARAM wParam, LPARAM lParam)
+{
+	TRACE("leaving");
+	this->mouseHovering = false;
+	this->mouseTracking = false;
+	return 0;
 }
 
 LRESULT Visualizer::Close()

@@ -21,15 +21,23 @@ public:
 
     virtual HRESULT Create();
     virtual LRESULT CALLBACK Message(HWND windowHandle, UINT message, WPARAM wParam, LPARAM lParam);
+
     LRESULT Render();
     void Update(double delta);
+
+    LRESULT MouseMove(WPARAM wParam, LPARAM lParam);
+    LRESULT MouseHover(WPARAM wParam, LPARAM lParam);
+    LRESULT MouseLeave(WPARAM wParam, LPARAM lParam);
+
     LRESULT Close();
 
 protected:
     virtual HRESULT Resize();
 
 private:
-    bool isHovering = false;
+    bool mouseHovering = false;
+    bool mouseTracking = false;
+
     std::vector<Bar> levels;
 
     Camera camera;
