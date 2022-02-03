@@ -28,6 +28,8 @@ public:
     LRESULT MouseMove(WPARAM wParam, LPARAM lParam);
     LRESULT MouseHover(WPARAM wParam, LPARAM lParam);
     LRESULT MouseLeave(WPARAM wParam, LPARAM lParam);
+    LRESULT RightButtonDown(WPARAM wParam, LPARAM lParam);
+    LRESULT Command(WPARAM wParam, LPARAM lParam);
 
     LRESULT Close();
 

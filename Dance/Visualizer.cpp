@@ -2,6 +2,8 @@
 #include "Engine/D3D/Camera.h"
 #include "Mathematics.h"
 
+static const int MENU_EXIT = 42;
+
 Visualizer::Visualizer
 (
 	InstanceHandle instance,
@@ -26,15 +28,6 @@ HRESULT Visualizer::Create()
 
 	GetClientRect(this->window.get(), &this->size);
 
-	/*
-	Matrix4F projection = Matrix4F::Orthographic(
-		(float)(this->size.right - this->size.left),
-		(float)(this->size.bottom - this->size.top),
-		1000.0f,
-		-1000.0f); 
-	Matrix4F worldToCamera = Matrix4F::Translation(Vector3(0.0f, 0.0f, -100.0f));
-	*/
-	
 	Matrix4F projection = Matrix4F::YRotation(-Geometry::PiOver2)
 		* Matrix4F::ZRotation(-Geometry::PiOver2)
 		* Matrix4F::Perspective(
@@ -99,6 +92,11 @@ LRESULT CALLBACK Visualizer::Message(HWND windowHandle, UINT message, WPARAM wPa
 	case WM_MOUSEMOVE:
 	case WM_NCMOUSEMOVE:
 		return this->MouseMove(wParam, lParam);
+	case WM_RBUTTONDOWN:
+	case WM_NCRBUTTONDOWN:
+		return this->RightButtonDown(wParam, lParam);
+	case WM_COMMAND:
+		return this->Command(wParam, lParam);
 	case WM_PAINT:
 		return this->Render();
 	case WM_DESTROY:
@@ -184,23 +182,52 @@ LRESULT Visualizer::MouseMove(WPARAM wParam, LPARAM lParam)
 		tracking.dwHoverTime = HOVER_DEFAULT;
 		TrackMouseEvent(&tracking);
 		this->mouseTracking = true;
-		TRACE("tracking");
 	}
 	return 0;
 }
 
 LRESULT Visualizer::MouseHover(WPARAM wParam, LPARAM lParam)
 {
-	TRACE("hover");
 	this->mouseHovering = true;
 	return 0;
 }
 
 LRESULT Visualizer::MouseLeave(WPARAM wParam, LPARAM lParam)
 {
-	TRACE("leaving");
 	this->mouseHovering = false;
 	this->mouseTracking = false;
+	return 0;
+}
+
+LRESULT Visualizer::RightButtonDown(WPARAM wParam, LPARAM lParam)
+{
+	HMENU hPopupMenu = ::CreatePopupMenu();
+	BET(InsertMenu(hPopupMenu, 0, MF_BYPOSITION | MF_STRING, MENU_EXIT, L"Exit"));
+	BET(::SetForegroundWindow(this->window.get()));
+	POINT point{ LOWORD(lParam), HIWORD(lParam) };
+	BET(::TrackPopupMenu(
+		hPopupMenu, 
+		TPM_TOPALIGN | TPM_LEFTALIGN,
+		point.x,
+		point.y,
+		0,
+		this->window.get(),
+		NULL));
+}
+
+LRESULT Visualizer::Command(WPARAM wParam, LPARAM lParam)
+{
+	// If from menu
+	if (HIWORD(wParam) == 0)
+	{
+		switch (LOWORD(wParam))
+		{
+		case MENU_EXIT:
+			::DestroyWindow(this->window.get());
+			return 0;
+		}
+	}
+
 	return 0;
 }
 
