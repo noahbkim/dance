@@ -29,7 +29,6 @@ HRESULT Visualizer::Create()
 	ComPtr<IMMDevice> device = getDefaultDevice();
 	TRACE("capturing " << getDeviceFriendlyName(device.Get()));
 	this->capture = Capture(device);
-	this->capture.Setup();
 	this->captureThread = CreateThread(nullptr, 0, Capture::Main, &this->capture, 0, nullptr);
 
 	TransparentWindow3D::Create();

@@ -5,6 +5,7 @@
 
 #include <exception>
 #include <algorithm>
+#include <vector>
 
 #pragma comment(lib, "Winmm.lib")
 
@@ -16,59 +17,104 @@ ComPtr<IMMDevice> getDefaultDevice();
 std::wstring getDeviceId(ComPtr<IMMDevice> device);
 std::wstring getDeviceFriendlyName(ComPtr<IMMDevice> device);
 
-class Capture
+template<typename T>
+class CaptureBuffer
 {
 public:
-    ComPtr<IMMDevice> Device;
-    ComPtr<IAudioClient> AudioClient = nullptr;
-    ComPtr<IAudioCaptureClient> AudioCaptureClient = nullptr;
-    INT16* Buffer = nullptr;
-    size_t BufferSize = 0;
+    CaptureBuffer() : buffer(0) {}
+    CaptureBuffer(size_t capacity) : buffer(capacity) {}
 
-    Capture() : Device(nullptr) {}
-    Capture(ComPtr<IMMDevice> device) : Device(device) {}
-
-    ~Capture()
+    void Discontinuity()
     {
-        CoTaskMemFree(this->waveFormat);
-        delete[] this->Buffer;
+        this->count = 0;
     }
 
-    HRESULT Setup()
+    void Write(const T* data, size_t count)
     {
-        OK(this->Device->Activate(
+        // In the case that the new data is longer than the buffer, start where there's only one buffer left
+        if (count > this->buffer.size())
+        {
+            this->Discontinuity();
+            data += count - this->buffer.size();
+        }
+
+        // Write up until end of buffer, memcpy size is in bytes
+        size_t fill = this->buffer.size() - this->index;
+        memcpy(&this->buffer.at(this->index), data, fill * sizeof(T));
+
+        // If there's more, start again at zero, looping around
+        if (count > fill)
+        {
+            size_t rest = count - fill;
+            memcpy(&this->buffer.at(0), data + fill, rest * sizeof(T));
+        }
+
+        // Update index, count, and timestamp
+        this->index = (this->index + count) % this->buffer.size();
+        this->count = std::min(this->count + count, this->buffer.size());
+        QueryPerformanceCounter(&this->timestamp);
+
+        TRACE("index: " << this->index << ", count: " << this->count << ", time: " << this->timestamp.QuadPart);
+    }
+
+    const std::vector<T>& Buffer() const
+    {
+        return this->buffer;
+    }
+
+    const size_t& Index() const
+    {
+        return this->index;
+    }
+
+    const size_t& Count() const
+    {
+        return this->count;
+    }
+
+    const LARGE_INTEGER& Timestamp() const
+    {
+        return this->timestamp;
+    }
+
+private:
+    std::vector<T> buffer;
+    size_t index{ 0 };
+    size_t count{ 0 };
+    LARGE_INTEGER timestamp{ 0 };
+};
+
+class Capture
+{
+public:    
+    Capture() : device(nullptr) {}
+
+    Capture(ComPtr<IMMDevice> device) : device(device) 
+    {
+        OKE(this->device->Activate(
             __uuidof(IAudioClient),
             CLSCTX_ALL,
             nullptr,
-            reinterpret_cast<void**>(this->AudioClient.ReleaseAndGetAddressOf())));
-        OK(this->DetermineWaveFormat());
+            reinterpret_cast<void**>(this->audioClient.ReleaseAndGetAddressOf())));
+        OKE(this->DetermineWaveFormat());
 
-        OK(this->AudioClient->Initialize(
+        OKE(this->audioClient->Initialize(
             AUDCLNT_SHAREMODE_SHARED,
             AUDCLNT_STREAMFLAGS_LOOPBACK,
             ONE_SECOND,
             0,
-            this->waveFormat,
+            this->waveFormat.get(),
             nullptr));
 
-        OK(this->AudioClient->GetBufferSize(&this->bufferFrameCount));
-        this->bufferDuration = (double)ONE_SECOND * this->bufferFrameCount / this->waveFormat->nSamplesPerSec;
-        OK(this->AudioClient->GetService(
+        OKE(this->audioClient->GetBufferSize(&this->bufferFrameCount));
+        OKE(this->audioClient->GetService(
             __uuidof(IAudioCaptureClient),
-            reinterpret_cast<void**>(this->AudioCaptureClient.ReleaseAndGetAddressOf())));
+            reinterpret_cast<void**>(this->audioCaptureClient.ReleaseAndGetAddressOf())));
 
-        this->BufferSize = static_cast<size_t>(this->bufferFrameCount) * this->waveFormat->nChannels;
-        this->Buffer = new INT16[this->BufferSize];
-        
-        return S_OK;
+        // Buffer will be interleaved
+        this->buffer = CaptureBuffer<INT16>(static_cast<size_t>(this->bufferFrameCount) * this->waveFormat->nChannels);
+        this->bufferDuration = (double)ONE_SECOND * this->bufferFrameCount / this->waveFormat->nSamplesPerSec;
     }
-
-    HRESULT Start()
-    {
-        return S_OK;
-    }
-
-    // https://stackoverflow.com/questions/64158704/wasapi-captured-packets-do-not-align
 
     HRESULT Sample()
     {
@@ -77,18 +123,20 @@ public:
         UINT32 availableBufferFrameCount;
         UINT32 packetLength;
 
-        OK(this->AudioCaptureClient->GetNextPacketSize(&packetLength));
+        OK(this->audioCaptureClient->GetNextPacketSize(&packetLength));
         while (packetLength != 0)
         {
-            OK(this->AudioCaptureClient->GetBuffer(
+            OK(this->audioCaptureClient->GetBuffer(
                 &data,
                 &availableBufferFrameCount,
                 &flags, 
                 nullptr, 
                 nullptr));
 
+            // https://stackoverflow.com/questions/64158704/wasapi-captured-packets-do-not-align
             if (flags & AUDCLNT_BUFFERFLAGS_DATA_DISCONTINUITY)
             {
+                this->buffer.Discontinuity();
                 TRACE("discontinuity!");
             }
             if (flags & AUDCLNT_BUFFERFLAGS_SILENT)
@@ -96,28 +144,33 @@ public:
                 TRACE("silent!");
             }
 
-            size_t remainingBufferScalarCount = (size_t)availableBufferFrameCount * this->waveFormat->nChannels;
-            while (remainingBufferScalarCount > 0)
-            {
-                size_t chunkSize = std::min(remainingBufferScalarCount, this->BufferSize - this->index);
-                memcpy(this->Buffer + this->index, data, chunkSize);
-                this->index = (this->index + chunkSize) % this->BufferSize;
-                remainingBufferScalarCount -= chunkSize;
-            }
+            this->buffer.Write(
+                reinterpret_cast<INT16*>(data),
+                availableBufferFrameCount * this->waveFormat->nChannels);
 
-            OK(this->AudioCaptureClient->ReleaseBuffer(availableBufferFrameCount));
-            OK(this->AudioCaptureClient->GetNextPacketSize(&packetLength));
+            OK(this->audioCaptureClient->ReleaseBuffer(availableBufferFrameCount));
+            OK(this->audioCaptureClient->GetNextPacketSize(&packetLength));
         }
     }
 
-    void Kill()
+    const CaptureBuffer<INT16>& Buffer() const
     {
-        this->alive = false;
+        return this->buffer;
+    }
+
+    REFERENCE_TIME BufferDuration() const
+    {
+        return this->bufferDuration;
+    }
+
+    UINT32 BufferFrameCount() const
+    {
+        return this->bufferFrameCount;
     }
 
     void Main()
     {
-        OKE(this->AudioClient->Start());
+        OKE(this->audioClient->Start());
 
         TRACE("bufferDuration: " << this->bufferDuration);
         TRACE("bufferFrameCount: " << this->bufferFrameCount);
@@ -130,9 +183,15 @@ public:
         }
 
         TRACE("exiting capture!");
-        OKE(this->AudioClient->Stop());
+        OKE(this->audioClient->Stop());
     }
 
+    void Kill()
+    {
+        this->alive = false;
+    }
+
+    // For threading
     static DWORD WINAPI Main(LPVOID lpParam)
     {
         Capture* capture = reinterpret_cast<Capture*>(lpParam);
@@ -141,15 +200,24 @@ public:
     }
 
 private:
-    size_t index = 0;
-    WAVEFORMATEX* waveFormat = nullptr;
+    ComPtr<IMMDevice> device;
+    ComPtr<IAudioClient> audioClient = nullptr;
+    ComPtr<IAudioCaptureClient> audioCaptureClient = nullptr;
+
+    CaptureBuffer<INT16> buffer;
     REFERENCE_TIME bufferDuration = 0;
     UINT32 bufferFrameCount = 0;
+
+    std::unique_ptr<WAVEFORMATEX, CoTaskDeleter<WAVEFORMATEX>> waveFormat = nullptr;
+
     bool alive = false;
 
     HRESULT DetermineWaveFormat()
     {
-        OK(this->AudioClient->GetMixFormat(&this->waveFormat));
+        // Quirk of std::unique_ptr is that it won't give you its pointer address
+        WAVEFORMATEX* waveFormat;
+        this->audioClient->GetMixFormat(&waveFormat);
+        this->waveFormat.reset(waveFormat);
 
         // Switch down to 2 channels
         if (this->waveFormat->nChannels > 2)
@@ -167,7 +235,7 @@ private:
         }
         else if (this->waveFormat->wFormatTag == WAVE_FORMAT_EXTENSIBLE)
         {
-            WAVEFORMATEXTENSIBLE* waveFormatExtensible = reinterpret_cast<WAVEFORMATEXTENSIBLE*>(this->waveFormat);
+            WAVEFORMATEXTENSIBLE* waveFormatExtensible = reinterpret_cast<WAVEFORMATEXTENSIBLE*>(this->waveFormat.get());
             if (waveFormatExtensible->SubFormat == KSDATAFORMAT_SUBTYPE_IEEE_FLOAT)
             {
                 waveFormatExtensible->SubFormat = KSDATAFORMAT_SUBTYPE_PCM;
@@ -179,6 +247,6 @@ private:
         }
 
         // Verify that this format is supported
-        OK(this->AudioClient->IsFormatSupported(AUDCLNT_SHAREMODE_EXCLUSIVE, this->waveFormat, NULL));
+        OK(this->audioClient->IsFormatSupported(AUDCLNT_SHAREMODE_EXCLUSIVE, this->waveFormat.get(), NULL));
     }
 };
