@@ -1,103 +1,48 @@
 #pragma once
 
 #include "Framework.h"
+#include "Common/Pointer.h"
 
 #include <exception>
 #include <algorithm>
 
 #pragma comment(lib, "Winmm.lib")
 
-/*
-try
-{
-    Capture capture(getDefaultDevice());
-    capture.Start();
-    capture.Debug();
-    capture.Stop();
-}
-catch (CaptureException& exception)
-{
-    TRACE("error setting up audio capture: " << exception.hresult);
-    return exception.hresult;
-}
-*/
-
-
 // A REFERENCE_TIME increment is 100 nanoseconds
 #define ONE_SECOND (1e9 / 1e2)
 #define ONE_MILLISECOND (1e9 / 1e3 / 1e2)
 
-struct CaptureException : public std::exception
-{
-    HRESULT hresult;
-
-    CaptureException(HRESULT hresult) : hresult(hresult) {}
-
-    const char* what() const throw ()
-    {
-        return "caught invalid HRESULT while capturing audio!";
-    }
-};
-
-#define OK(call) if (HRESULT result = call) { throw CaptureException(result); }
-#define RELEASE(object) if (object != nullptr) { object->Release(); }
-
-std::wstring getDeviceId(IMMDevice* device)
-{
-    LPWSTR id = NULL;
-    OK(device->GetId(&id));
-    std::wstring result(id);
-
-    CoTaskMemFree(id);
-    return result;
-}
-
-std::wstring getDeviceFriendlyName(IMMDevice* device)
-{
-    IPropertyStore* propertyStore;
-    OK(device->OpenPropertyStore(STGM_READ, &propertyStore));
-
-    PROPVARIANT name;
-    PropVariantInit(&name);
-    OK(propertyStore->GetValue(PKEY_Device_FriendlyName, &name));
-    std::wstring result(name.pwszVal);
-
-    PropVariantClear(&name);
-    propertyStore->Release();
-
-    return result;
-}
+ComPtr<IMMDevice> getDefaultDevice();
+std::wstring getDeviceId(ComPtr<IMMDevice> device);
+std::wstring getDeviceFriendlyName(ComPtr<IMMDevice> device);
 
 class Capture
 {
 public:
-    IMMDevice* Device;
-    IAudioClient* AudioClient = nullptr;
-    IAudioCaptureClient* AudioCaptureClient = nullptr;
+    ComPtr<IMMDevice> Device;
+    ComPtr<IAudioClient> AudioClient = nullptr;
+    ComPtr<IAudioCaptureClient> AudioCaptureClient = nullptr;
     INT16* Buffer = nullptr;
     size_t BufferSize = 0;
 
     Capture() : Device(nullptr) {}
-    Capture(IMMDevice* device) : Device(device) {}
+    Capture(ComPtr<IMMDevice> device) : Device(device) {}
 
     ~Capture()
     {
-        this->Device->Release();
         CoTaskMemFree(this->waveFormat);
-        RELEASE(this->AudioClient);
-        RELEASE(this->AudioCaptureClient);
         delete[] this->Buffer;
     }
 
-    void Setup()
+    HRESULT Setup()
     {
         OK(this->Device->Activate(
             __uuidof(IAudioClient),
             CLSCTX_ALL,
             nullptr,
-            (void**)&this->AudioClient));
+            reinterpret_cast<void**>(this->AudioClient.ReleaseAndGetAddressOf())));
+        OK(this->DetermineWaveFormat());
 
-        this->DetermineWaveFormat();
         OK(this->AudioClient->Initialize(
             AUDCLNT_SHAREMODE_SHARED,
             AUDCLNT_STREAMFLAGS_LOOPBACK,
@@ -108,20 +53,24 @@ public:
 
         OK(this->AudioClient->GetBufferSize(&this->bufferFrameCount));
         this->bufferDuration = (double)ONE_SECOND * this->bufferFrameCount / this->waveFormat->nSamplesPerSec;
-        OK(this->AudioClient->GetService(__uuidof(IAudioCaptureClient), (void**)&this->AudioCaptureClient));
+        OK(this->AudioClient->GetService(
+            __uuidof(IAudioCaptureClient),
+            reinterpret_cast<void**>(this->AudioCaptureClient.ReleaseAndGetAddressOf())));
 
-        this->BufferSize = this->bufferFrameCount * this->waveFormat->nChannels;
+        this->BufferSize = static_cast<size_t>(this->bufferFrameCount) * this->waveFormat->nChannels;
         this->Buffer = new INT16[this->BufferSize];
+        
+        return S_OK;
     }
 
-    void Start()
+    HRESULT Start()
     {
-        OK(this->AudioClient->Start());
+        return S_OK;
     }
 
     // https://stackoverflow.com/questions/64158704/wasapi-captured-packets-do-not-align
 
-    void Sample()
+    HRESULT Sample()
     {
         BYTE* data;
         DWORD flags;
@@ -161,22 +110,34 @@ public:
         }
     }
 
-    void Stop()
+    void Kill()
     {
-        OK(this->AudioClient->Stop());
+        this->alive = false;
     }
 
-    void Debug()
+    void Main()
     {
-        clock();
-        TRACE("bufferDuration" << this->bufferDuration);
-        TRACE("bufferFrameCount" << this->bufferFrameCount);
+        OKE(this->AudioClient->Start());
 
-        while (clock() < 10 * CLOCKS_PER_SEC)
+        TRACE("bufferDuration: " << this->bufferDuration);
+        TRACE("bufferFrameCount: " << this->bufferFrameCount);
+
+        this->alive = true;
+        while (this->alive)
         {
             Sleep(this->bufferDuration / ONE_MILLISECOND / 2);
             this->Sample();
         }
+
+        TRACE("exiting capture!");
+        OKE(this->AudioClient->Stop());
+    }
+
+    static DWORD WINAPI Main(LPVOID lpParam)
+    {
+        Capture* capture = reinterpret_cast<Capture*>(lpParam);
+        capture->Main();
+        return 0;
     }
 
 private:
@@ -184,8 +145,9 @@ private:
     WAVEFORMATEX* waveFormat = nullptr;
     REFERENCE_TIME bufferDuration = 0;
     UINT32 bufferFrameCount = 0;
+    bool alive = false;
 
-    void DetermineWaveFormat()
+    HRESULT DetermineWaveFormat()
     {
         OK(this->AudioClient->GetMixFormat(&this->waveFormat));
 
@@ -220,18 +182,3 @@ private:
         OK(this->AudioClient->IsFormatSupported(AUDCLNT_SHAREMODE_EXCLUSIVE, this->waveFormat, NULL));
     }
 };
-
-IMMDevice* getDefaultDevice()
-{
-    IMMDeviceEnumerator* deviceEnumerator;
-    OK(CoCreateInstance(
-        __uuidof(MMDeviceEnumerator),
-        NULL,
-        CLSCTX_ALL,
-        __uuidof(IMMDeviceEnumerator),
-        (void**)&deviceEnumerator));
-
-    IMMDevice* device;
-    OK(deviceEnumerator->GetDefaultAudioEndpoint(eRender, eConsole, &device));
-    return device;
-}

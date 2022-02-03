@@ -28,7 +28,7 @@ public:
 		, shader()
 	{}
 
-	Renderable(ID3D11Device* device) 
+	Renderable(ComPtr<ID3D11Device> device) 
 		: deviceContext(nullptr)
 		, vertices()
 		, constants(device)

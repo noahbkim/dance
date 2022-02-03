@@ -20,7 +20,7 @@ public:
 
 	Camera() : constants() {}
 
-	Camera(ID3D11Device* device, Matrix4F worldToCamera, Matrix4F projection)
+	Camera(ComPtr<ID3D11Device> device, Matrix4F worldToCamera, Matrix4F projection)
 		: WorldToCamera(worldToCamera)
 		, Projection(projection)
 		, constants(device)

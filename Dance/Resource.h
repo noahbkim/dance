@@ -1,5 +1,4 @@
-// Microsoft Visual C++ generated include file.
-// Used by Dance.rc
+#pragma once
 
 #define IDS_APP_TITLE			103
 #define IDR_MAINFRAME			128

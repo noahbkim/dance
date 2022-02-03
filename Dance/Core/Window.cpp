@@ -222,8 +222,8 @@ LRESULT BorderlessWindow::CalculateSize(WPARAM wParam, LPARAM lParam)
 {
 	if (wParam == TRUE)
 	{
-		auto& params = *reinterpret_cast<NCCALCSIZE_PARAMS*>(lParam);
-		adjustMaximizedClientRectangle(this->window.get(), params.rgrc[0]);
+		NCCALCSIZE_PARAMS* params = reinterpret_cast<NCCALCSIZE_PARAMS*>(lParam);
+		adjustMaximizedClientRectangle(this->window.get(), params->rgrc[0]);
 	}
 	return 0;
 }

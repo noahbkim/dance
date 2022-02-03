@@ -2,6 +2,7 @@
 
 #include "Core/Window.h"
 #include "Core/Runtime.h"
+#include "Core/Capture.h"
 #include "Engine/Common/Primitive.h"
 #include "Engine/Common/Buffer.h"
 #include "Engine/Common/Shader.h"
@@ -41,10 +42,14 @@ private:
     bool mouseTracking = false;
 
     std::vector<Bar> levels;
+    Capture capture;
+    HANDLE captureThread;
 
+    /*
     Camera camera;
     Cube cube;
     float theta;
+    */
 
     void RenderBorder();
 };

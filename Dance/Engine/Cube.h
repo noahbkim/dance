@@ -58,7 +58,7 @@ class Cube : public Renderable
 public:
 	Cube() : Renderable() {}
 
-	Cube(ID3D11Device* device) : Renderable(device) 
+	Cube(ComPtr<ID3D11Device> device) : Renderable(device) 
 	{
 		this->vertices = IndexedVertexBuffer(device, lengthof(VERTICES), VERTICES, lengthof(INDICES), INDICES);
 		this->shader = Shader(device, L"Shader/Mesh.hlsl", LAYOUT, lengthof(LAYOUT));

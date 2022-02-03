@@ -31,7 +31,7 @@ class VertexBuffer : public Buffer<T>
 public:
     VertexBuffer() : Buffer<T>(0), deviceContext(nullptr), buffer(nullptr) {}
 
-	VertexBuffer(ID3D11Device* device, UINT count, const T* data) : Buffer<T>(count)
+	VertexBuffer(ComPtr<ID3D11Device> device, UINT count, const T* data) : Buffer<T>(count)
     {
         device->GetImmediateContext(this->deviceContext.ReleaseAndGetAddressOf());
         D3D11_BUFFER_DESC bufferDescriptor{};
@@ -64,7 +64,7 @@ class IndexBuffer : public Buffer<T>
 public:
     IndexBuffer() : Buffer<T>(0), deviceContext(nullptr), buffer(nullptr) {}
 
-    IndexBuffer(ID3D11Device* device, UINT count, const T* data) : Buffer<T>(count)
+    IndexBuffer(ComPtr<ID3D11Device> device, UINT count, const T* data) : Buffer<T>(count)
     {
         device->GetImmediateContext(this->deviceContext.ReleaseAndGetAddressOf());
         D3D11_BUFFER_DESC bufferDescriptor{};
@@ -101,7 +101,7 @@ public:
 
     IndexedVertexBuffer
     (
-        ID3D11Device* device,
+        ComPtr<ID3D11Device> device,
         UINT vertexCount,
         const V* vertexData,
         UINT indexCount,
@@ -131,7 +131,7 @@ public:
 
     ConstantBuffer(UINT count) : Buffer<T>(count) {}
 
-    ConstantBuffer(ID3D11Device* device, UINT count, const T* data) : Buffer<T>(count)
+    ConstantBuffer(ComPtr<ID3D11Device> device, UINT count, const T* data) : Buffer<T>(count)
     {
         device->GetImmediateContext(this->deviceContext.ReleaseAndGetAddressOf());
         D3D11_BUFFER_DESC bufferDescriptor{};
@@ -159,7 +159,7 @@ class MutableConstantBuffer : public ConstantBuffer<T>
 public:
     MutableConstantBuffer() : ConstantBuffer<T>() {}
 
-    MutableConstantBuffer(ID3D11Device* device, UINT count, const T* data) : ConstantBuffer<T>(count)
+    MutableConstantBuffer(ComPtr<ID3D11Device> device, UINT count, const T* data) : ConstantBuffer<T>(count)
     {
         device->GetImmediateContext(this->deviceContext.ReleaseAndGetAddressOf());
         D3D11_BUFFER_DESC bufferDescriptor{};
@@ -188,11 +188,11 @@ public:
 
     ManagedMutableConstantBuffer() : MutableConstantBuffer<T>() {}
 
-    ManagedMutableConstantBuffer(ID3D11Device* device)
+    ManagedMutableConstantBuffer(ComPtr<ID3D11Device> device)
         : MutableConstantBuffer<T>(device, 1, &this->Data)
     {}
 
-    ManagedMutableConstantBuffer(ID3D11Device* device, T data) 
+    ManagedMutableConstantBuffer(ComPtr<ID3D11Device> device, T data)
         : Data(data)
         , MutableConstantBuffer<T>(device, 1, &this->Data)
     {}

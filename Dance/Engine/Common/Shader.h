@@ -21,7 +21,7 @@ public:
 
     Shader
     (
-        ID3D11Device* device,
+        ComPtr<ID3D11Device> device,
         const WCHAR* path,
         const D3D11_INPUT_ELEMENT_DESC* layout,
         size_t count
