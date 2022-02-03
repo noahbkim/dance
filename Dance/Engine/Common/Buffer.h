@@ -18,7 +18,7 @@ public:
         return this->Count * sizeof(T);
     }
 
-    inline UINT Stride() const
+    inline constexpr UINT Stride() const
     {
         return static_cast<UINT>(sizeof(T));
     }

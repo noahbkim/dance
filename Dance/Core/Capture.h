@@ -39,7 +39,7 @@ public:
         }
 
         // Write up until end of buffer, memcpy size is in bytes
-        size_t fill = this->buffer.size() - this->index;
+        size_t fill = std::min(count, this->buffer.size() - this->index);
         memcpy(&this->buffer.at(this->index), data, fill * sizeof(T));
 
         // If there's more, start again at zero, looping around
@@ -53,8 +53,7 @@ public:
         this->index = (this->index + count) % this->buffer.size();
         this->count = std::min(this->count + count, this->buffer.size());
         QueryPerformanceCounter(&this->timestamp);
-
-        TRACE("index: " << this->index << ", count: " << this->count << ", time: " << this->timestamp.QuadPart);
+        // TRACE("index: " << this->index << ", count: " << this->count << ", time: " << this->timestamp.QuadPart);
     }
 
     const std::vector<T>& Buffer() const
@@ -87,6 +86,11 @@ private:
 class Capture
 {
 public:    
+    CaptureBuffer<INT16> Buffer;
+    REFERENCE_TIME BufferDuration = 0;  // REFERENCE_TIME
+    UINT32 BufferFrameCount = 0;
+    UINT32 BufferRecentFrameCount = 0;
+
     Capture() : device(nullptr) {}
 
     Capture(ComPtr<IMMDevice> device) : device(device) 
@@ -106,14 +110,14 @@ public:
             this->waveFormat.get(),
             nullptr));
 
-        OKE(this->audioClient->GetBufferSize(&this->bufferFrameCount));
+        OKE(this->audioClient->GetBufferSize(&this->BufferFrameCount));
         OKE(this->audioClient->GetService(
             __uuidof(IAudioCaptureClient),
             reinterpret_cast<void**>(this->audioCaptureClient.ReleaseAndGetAddressOf())));
 
         // Buffer will be interleaved
-        this->buffer = CaptureBuffer<INT16>(static_cast<size_t>(this->bufferFrameCount) * this->waveFormat->nChannels);
-        this->bufferDuration = (double)ONE_SECOND * this->bufferFrameCount / this->waveFormat->nSamplesPerSec;
+        this->Buffer = CaptureBuffer<INT16>(static_cast<size_t>(this->BufferFrameCount) * this->waveFormat->nChannels);
+        this->BufferDuration = (double)ONE_SECOND * this->BufferFrameCount / this->waveFormat->nSamplesPerSec;
     }
 
     HRESULT Sample()
@@ -122,6 +126,8 @@ public:
         DWORD flags;
         UINT32 availableBufferFrameCount;
         UINT32 packetLength;
+
+        this->BufferRecentFrameCount = 0;
 
         OK(this->audioCaptureClient->GetNextPacketSize(&packetLength));
         while (packetLength != 0)
@@ -136,7 +142,7 @@ public:
             // https://stackoverflow.com/questions/64158704/wasapi-captured-packets-do-not-align
             if (flags & AUDCLNT_BUFFERFLAGS_DATA_DISCONTINUITY)
             {
-                this->buffer.Discontinuity();
+                this->Buffer.Discontinuity();
                 TRACE("discontinuity!");
             }
             if (flags & AUDCLNT_BUFFERFLAGS_SILENT)
@@ -144,45 +150,27 @@ public:
                 TRACE("silent!");
             }
 
-            this->buffer.Write(
+            this->Buffer.Write(
                 reinterpret_cast<INT16*>(data),
-                availableBufferFrameCount * this->waveFormat->nChannels);
+                static_cast<size_t>(availableBufferFrameCount) * this->waveFormat->nChannels);
+            this->BufferRecentFrameCount += availableBufferFrameCount;
 
             OK(this->audioCaptureClient->ReleaseBuffer(availableBufferFrameCount));
             OK(this->audioCaptureClient->GetNextPacketSize(&packetLength));
         }
     }
 
-    const CaptureBuffer<INT16>& Buffer() const
-    {
-        return this->buffer;
-    }
-
-    REFERENCE_TIME BufferDuration() const
-    {
-        return this->bufferDuration;
-    }
-
-    UINT32 BufferFrameCount() const
-    {
-        return this->bufferFrameCount;
-    }
-
     void Main()
     {
         OKE(this->audioClient->Start());
 
-        TRACE("bufferDuration: " << this->bufferDuration);
-        TRACE("bufferFrameCount: " << this->bufferFrameCount);
-
         this->alive = true;
         while (this->alive)
         {
-            Sleep(this->bufferDuration / ONE_MILLISECOND / 2);
+            Sleep(this->BufferDuration / ONE_MILLISECOND / 50);
             this->Sample();
         }
 
-        TRACE("exiting capture!");
         OKE(this->audioClient->Stop());
     }
 
@@ -203,10 +191,6 @@ private:
     ComPtr<IMMDevice> device;
     ComPtr<IAudioClient> audioClient = nullptr;
     ComPtr<IAudioCaptureClient> audioCaptureClient = nullptr;
-
-    CaptureBuffer<INT16> buffer;
-    REFERENCE_TIME bufferDuration = 0;
-    UINT32 bufferFrameCount = 0;
 
     std::unique_ptr<WAVEFORMATEX, CoTaskDeleter<WAVEFORMATEX>> waveFormat = nullptr;
 
