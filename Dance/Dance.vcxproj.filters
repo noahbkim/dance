@@ -30,9 +30,6 @@
     <ClInclude Include="Common\Read.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Common\StepTimer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Common\Graphics.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -46,9 +43,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Core\Window.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\D3D\Shorthand.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Common\Buffer.h">
@@ -82,6 +76,15 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Mathematics.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Cube.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\D3D\Renderable.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\D3D\Camera.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

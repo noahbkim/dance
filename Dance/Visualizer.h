@@ -5,6 +5,8 @@
 #include "Engine/Common/Primitive.h"
 #include "Engine/Common/Buffer.h"
 #include "Engine/Common/Shader.h"
+#include "Engine/D3d/Camera.h"
+#include "Engine/Cube.h"
 
 struct Bar
 {
@@ -23,12 +25,16 @@ public:
     void Update(double delta);
     LRESULT Close();
 
+protected:
+    virtual HRESULT Resize();
+
 private:
     bool isHovering = false;
     std::vector<Bar> levels;
 
-    VertexBuffer<PositionColorVertex> vertices;
-    Shader shader;
+    Camera camera;
+    Cube cube;
+    float theta;
 
     void RenderBorder();
 };

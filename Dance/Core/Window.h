@@ -89,9 +89,12 @@ protected:
     ComPtr<ID3D11RenderTargetView> d3dBackBufferView;
     ComPtr<ID3D11RenderTargetView> d3dRenderTargetView;
     ComPtr<ID3D11DepthStencilView> d3dDepthStencilView;
+    ComPtr<ID3D11Texture2D> d3dDepthTexture;
     ComPtr<ID3D11SamplerState> d3dSamplerState;
 
     HRESULT CreateRenderTarget();
     HRESULT ReleaseRenderTarget();
+    HRESULT CreateDepthStencil();
+    HRESULT ReleaseDepthStencil();
     virtual HRESULT Resize();
 };

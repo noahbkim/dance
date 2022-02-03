@@ -41,10 +41,8 @@ int APIENTRY wWinMain(
             ::TranslateMessage(&message);
             DispatchMessage(&message);
         }
-        else
-        {
-            visualizer.Tick();
-        }
+
+        visualizer.Tick();
     }
 
     ::CoUninitialize();

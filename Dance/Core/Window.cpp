@@ -458,10 +458,21 @@ HRESULT TransparentWindow3D::Create()
 
 	// https://docs.microsoft.com/en-us/windows/win32/direct2d/direct2d-and-direct3d-interoperation-overview
 	this->d3dDevice->GetImmediateContext(this->d3dDeviceContext.ReleaseAndGetAddressOf());
-	this->CreateRenderTarget();
+
+	// Create depth stencil state
+	D3D11_DEPTH_STENCIL_DESC descriptor{};
+	descriptor.DepthEnable = true;
+	descriptor.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+	descriptor.DepthFunc = D3D11_COMPARISON_LESS;
+	descriptor.StencilEnable = false;
+	ComPtr<ID3D11DepthStencilState> depthStencilState;
+	OK(this->d3dDevice->CreateDepthStencilState(&descriptor, depthStencilState.ReleaseAndGetAddressOf()));
+	this->d3dDeviceContext->OMSetDepthStencilState(depthStencilState.Get(), 0);
+
+	OK(this->CreateRenderTarget());
+	OK(this->CreateDepthStencil());
 	return S_OK;
 }
-
 
 HRESULT TransparentWindow3D::CreateRenderTarget()
 {
@@ -487,10 +498,47 @@ HRESULT TransparentWindow3D::ReleaseRenderTarget()
 	return S_OK;
 }
 
+HRESULT TransparentWindow3D::CreateDepthStencil()
+{
+	D3D11_TEXTURE2D_DESC descriptor{};
+	descriptor.Width = this->size.right - this->size.left;
+	descriptor.Height = this->size.bottom - this->size.top;
+	descriptor.MipLevels = 1;
+	descriptor.ArraySize = 1;
+	descriptor.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+	descriptor.SampleDesc.Count = 1;
+	descriptor.SampleDesc.Quality = 0;
+	descriptor.Usage = D3D11_USAGE_DEFAULT;
+	descriptor.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+	descriptor.CPUAccessFlags = 0;
+	descriptor.MiscFlags = 0;
+	OK(this->d3dDevice->CreateTexture2D(&descriptor, nullptr, this->d3dDepthTexture.ReleaseAndGetAddressOf()));
+
+	D3D11_DEPTH_STENCIL_VIEW_DESC viewDescriptor{};
+	viewDescriptor.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+	viewDescriptor.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+	viewDescriptor.Texture2D.MipSlice = 0;
+	OK(this->d3dDevice->CreateDepthStencilView(
+		this->d3dDepthTexture.Get(),
+		&viewDescriptor,
+		this->d3dDepthStencilView.ReleaseAndGetAddressOf()));
+
+	return S_OK;
+}
+
+HRESULT TransparentWindow3D::ReleaseDepthStencil()
+{
+	this->d3dDepthStencilView = nullptr;
+	this->d3dDepthTexture = nullptr;
+	return S_OK;
+}
+
 HRESULT TransparentWindow3D::Resize()
 {
 	OK(this->ReleaseRenderTarget());
+	OK(this->ReleaseDepthStencil());
 	OK(TransparentWindow::Resize());
 	OK(this->CreateRenderTarget());
+	OK(this->CreateDepthStencil());
 	return S_OK;
 }

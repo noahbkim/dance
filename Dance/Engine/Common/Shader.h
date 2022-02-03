@@ -64,7 +64,7 @@ public:
         HRESULT result = ::D3DCompileFromFile(
             path,
             nullptr,
-            nullptr,
+            D3D_COMPILE_STANDARD_FILE_INCLUDE,
             entry,
             model,
             0,

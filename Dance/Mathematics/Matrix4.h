@@ -11,8 +11,18 @@ public:
 
     Matrix4()
     {
-        *this = Matrix4::Identity();
+        *this = Matrix4::Identity<T>();
     }
+
+    explicit Matrix4
+    (
+        T a, T b, T c, T d,
+        T e, T f, T g, T h,
+        T i, T j, T k, T l,
+        T m, T n, T o, T p
+    )
+        : value{{a, b, c, d}, {e, f, g, h}, {i, j, k, l}, {m, n, o, p}}
+    {}
 
     explicit Matrix4(const T value[4][4])
     {
@@ -243,6 +253,13 @@ public:
         }
     }
 
+    Matrix4 Inverted() const
+    {
+        Matrix4 result(*this);
+        result.Invert();
+        return result;
+    }
+
     Vector3<T> Translation() const
     {
         return Vector3<T>(this->value[3][0], this->value[3][1], this->value[3][2]);
@@ -299,12 +316,12 @@ public:
     static constexpr Matrix4<T> Scale(T x, T y, T z)
     {
         return Matrix4<T>
-        ({
-            { x, 0, 0, 0 },
-            { 0, y, 0, 0 },
-            { 0, 0, z, 0 },
-            { 0, 0, 0, 1 }
-        });
+        (
+            x, 0, 0, 0,
+            0, y, 0, 0,
+            0, 0, z, 0,
+            0, 0, 0, 1
+        );
     }
 
     template<typename T>
@@ -323,36 +340,36 @@ public:
     static constexpr Matrix4<T> XRotation(T theta)
     {
         return Matrix4<T>
-        ({
-            { 1, 0, 0, 0 },
-            { 0, std::cos(theta), std::sin(theta), 0 },
-            { 0, -std::sin(theta), std::cos(theta), 0 },
-            { 0, 0, 0, 1 },
-        });
+        (
+            1, 0, 0, 0,
+            0, std::cos(theta), std::sin(theta), 0,
+            0, -std::sin(theta), std::cos(theta), 0,
+            0, 0, 0, 1
+        );
     }
 
     template<typename T>
     static constexpr Matrix4<T> YRotation(T theta)
     {
         return Matrix4<T>
-        ({
-            { std::cos(theta), 0, -std::sin(theta), 0 },
-            { 0, 1, 0, 0 },
-            { std::sinf(theta), 0, std::cos(theta), 0 },
-            { 0, 0, 0, 1 },
-        });
+        (
+            std::cos(theta), 0, -std::sin(theta), 0,
+            0, 1, 0, 0,
+            std::sin(theta), 0, std::cos(theta), 0,
+            0, 0, 0, 1
+        );
     }
 
     template<typename T>
     static constexpr Matrix4<T> ZRotation(T theta)
     {
         return Matrix4<T>
-        ({
-            { std::cos(theta), std::sin(theta), 0, 0 },
-            { -std::sin(theta), std::cos(theta), 0, 0 },
-            { 0, 0, 1, 0 },
-            { 0, 0, 0, 1 },
-        });
+        (
+            std::cos(theta), std::sin(theta), 0, 0,
+            -std::sin(theta), std::cos(theta), 0, 0,
+            0, 0, 1, 0,
+            0, 0, 0, 1
+        );
     }
 
     template<typename T>
@@ -384,15 +401,27 @@ public:
     }
 
     template<typename T>
+    static constexpr Matrix4<T> Translation(T x, T y, T z)
+    {
+        return Matrix4<T>
+        (
+            1, 0, 0, 0,
+            0, 1, 0, 0,
+            0, 0, 1, 0,
+            x, y, z, 1
+        );
+    }
+
+    template<typename T>
     static constexpr Matrix4<T> Translation(const Vector3<T>& v)
     {
         return Matrix4<T>
-        ({
-            { 1, 0, 0, 0 },
-            { 0, 1, 0, 0 },
-            { 0, 0, 1, 0 },
-            { v.x, v.y, v.z, 1 },
-        });
+        (
+            1, 0, 0, 0,
+            0, 1, 0, 0,
+            0, 0, 1, 0,
+            v.x, v.y, v.z, 1
+        );
     }
 
     template<typename T>
@@ -403,24 +432,24 @@ public:
         Vector3<T> newUp = Vector3::Cross<T>(forward, left).Normalized();
 
         return Matrix4<T>
-        ({
-            { left.x, left.y, left.z, 0 },
-            { newUp.x, newUp.y, newUp.z, 0 },
-            { forward.x, forward.y, forward.z, 0 },
-            { eye.x, eye.y, eye.z, 1 }
-        });
+        (
+            left.x, left.y, left.z, 0,
+            newUp.x, newUp.y, newUp.z, 0,
+            forward.x, forward.y, forward.z, 0,
+            eye.x, eye.y, eye.z, 1
+        );
     }
 
     template<typename T>
     static constexpr Matrix4<T> Orthographic(T width, T height, T nearZ, T farZ)
     {
         return Matrix4<T>
-        ({
-            { 2 / width, 0, 0, 0 },
-            { 0, 2 / height, 0, 0 },
-            { 0, 0, 1 / (farZ - nearZ), 0 },
-            { 0, 0, nearZ / (nearZ - farZ), 1 }
-        });
+        (
+            2 / width, 0, 0, 0,
+            0, 2 / height, 0, 0,
+            0, 0, 1 / (farZ - nearZ), 0,
+            0, 0, nearZ / (nearZ - farZ), 1
+        );
     }
 
     template<typename T>
@@ -429,24 +458,24 @@ public:
         T yScale = 1 / std::tan(fovY / 2);
         T xScale = yScale * height / width;
         return Matrix4<T>
-        ({
-            { xScale, 0, 0, 0 },
-            { 0, yScale, 0, 0 },
-            { 0, 0, farZ / (farZ - nearZ), 1 },
-            { 0, 0, -nearZ * farZ / (farZ - nearZ), 0 }
-        });
+        (
+            xScale, 0, 0, 0,
+            0, yScale, 0, 0,
+            0, 0, farZ / (farZ - nearZ), 1,
+            0, 0, -nearZ * farZ / (farZ - nearZ), 0
+        );
     }
 
     template<typename T>
     static constexpr Matrix4<T> Identity()
     {
         return Matrix4<T>
-        ({
-            { 1, 0, 0, 0 },
-            { 0, 1, 0, 0 },
-            { 0, 0, 1, 0 },
-            { 0, 0, 0, 1 }
-        });
+        (
+            1, 0, 0, 0,
+            0, 1, 0, 0,
+            0, 0, 1, 0,
+            0, 0, 0, 1
+        );
     }
 };
 

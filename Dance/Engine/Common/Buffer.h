@@ -90,25 +90,25 @@ private:
     ComPtr<ID3D11Buffer> buffer;
 };
 
-template<typename I, DXGI_FORMAT IF, typename V>
+template<typename V, typename I = uint16_t, DXGI_FORMAT IF = DXGI_FORMAT_R16_UINT>
 class IndexedVertexBuffer
 {
 public:
-    IndexBuffer<I, IF> Indices;
     VertexBuffer<V> Vertices;
+    IndexBuffer<I, IF> Indices;
 
-    IndexedVertexBuffer() : Indices(), Vertices() {}
+    IndexedVertexBuffer() : Vertices(), Indices() {}
 
     IndexedVertexBuffer
     (
         ID3D11Device* device,
-        UINT indexCount,
-        I* indexData,
         UINT vertexCount,
-        V* vertexData
+        const V* vertexData,
+        UINT indexCount,
+        const I* indexData
     )
-        : Indices(device, indexCount, indexData)
-        , Vertices(device, vertexCount, vertexData)
+        : Vertices(device, vertexCount, vertexData)
+        , Indices(device, indexCount, indexData)
     {}
 
     inline void Set() const
@@ -129,6 +129,8 @@ class ConstantBuffer : public Buffer<T>
 public:
     ConstantBuffer() : Buffer<T>(0), deviceContext(nullptr), buffer(nullptr) {}
 
+    ConstantBuffer(UINT count) : Buffer<T>(count) {}
+
     ConstantBuffer(ID3D11Device* device, UINT count, const T* data) : Buffer<T>(count)
     {
         device->GetImmediateContext(this->deviceContext.ReleaseAndGetAddressOf());
@@ -146,7 +148,7 @@ public:
         this->deviceContext->PSSetConstantBuffers(index, count, this->buffer.GetAddressOf());
     }
 
-private:
+protected:
     ComPtr<ID3D11DeviceContext> deviceContext;
     ComPtr<ID3D11Buffer> buffer;
 };
@@ -154,15 +156,16 @@ private:
 template<typename T>
 class MutableConstantBuffer : public ConstantBuffer<T>
 {
+public:
     MutableConstantBuffer() : ConstantBuffer<T>() {}
 
-    MutableConstantBuffer(ID3D11Device* device, UINT count, const T* data) : Buffer<T>(count)
+    MutableConstantBuffer(ID3D11Device* device, UINT count, const T* data) : ConstantBuffer<T>(count)
     {
         device->GetImmediateContext(this->deviceContext.ReleaseAndGetAddressOf());
         D3D11_BUFFER_DESC bufferDescriptor{};
         bufferDescriptor.Usage = D3D11_USAGE_DYNAMIC;
         bufferDescriptor.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-        bufferDescriptor.CPUAccessFlags = D3D11_USAGE_DYNAMIC;
+        bufferDescriptor.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
         bufferDescriptor.ByteWidth = count * sizeof(T);
         D3D11_SUBRESOURCE_DATA subresourceData = { data };
         OKE(device->CreateBuffer(&bufferDescriptor, &subresourceData, this->buffer.ReleaseAndGetAddressOf()));
@@ -174,5 +177,28 @@ class MutableConstantBuffer : public ConstantBuffer<T>
         OKE(this->deviceContext->Map(this->buffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedSubresource));
         memcpy(mappedSubresource.pData, data, this->Size());
         this->deviceContext->Unmap(this->buffer.Get(), 0);
+    }
+};
+
+template<typename T>
+class ManagedMutableConstantBuffer : public MutableConstantBuffer<T>
+{
+public:
+    T Data;
+
+    ManagedMutableConstantBuffer() : MutableConstantBuffer<T>() {}
+
+    ManagedMutableConstantBuffer(ID3D11Device* device)
+        : MutableConstantBuffer<T>(device, 1, &this->Data)
+    {}
+
+    ManagedMutableConstantBuffer(ID3D11Device* device, T data) 
+        : Data(data)
+        , MutableConstantBuffer<T>(device, 1, &this->Data)
+    {}
+
+    inline void Write() const
+    {
+        MutableConstantBuffer<T>::Write(&this->Data);
     }
 };

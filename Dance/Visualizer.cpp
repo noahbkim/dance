@@ -1,12 +1,6 @@
 #include "Visualizer.h"
-#include "Engine/Common/Buffer.h"
+#include "Engine/D3D/Camera.h"
 #include "Mathematics.h"
-
-class Renderable
-{
-private:
-	
-};
 
 Visualizer::Visualizer
 (
@@ -28,26 +22,58 @@ Visualizer::Visualizer
 HRESULT Visualizer::Create()
 {
 	TransparentWindow3D::Create();
+	this->d3dDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
+	GetClientRect(this->window.get(), &this->size);
+
+	/*
+	Matrix4F projection = Matrix4F::Orthographic(
+		(float)(this->size.right - this->size.left),
+		(float)(this->size.bottom - this->size.top),
+		1000.0f,
+		-1000.0f); 
+	Matrix4F worldToCamera = Matrix4F::Translation(Vector3(0.0f, 0.0f, -100.0f));
+	*/
+	
+	Matrix4F projection = Matrix4F::YRotation(-Geometry::PiOver2)
+		* Matrix4F::ZRotation(-Geometry::PiOver2)
+		* Matrix4F::Perspective(
+			Geometry::ToRadians(70.0f),
+			(FLOAT)(this->size.right - this->size.left),
+			(FLOAT)(this->size.bottom - this->size.top),
+			25.0f,
+			10000.0f);
+	Matrix4F worldToCamera = Matrix4F::Translation(Vector3(500.0f, 0.0f, 0.0f));
+
+	this->cube = Cube(this->d3dDevice.Get());
+	this->camera = Camera(this->d3dDevice.Get(), worldToCamera, projection);
+	this->theta = 0.0f;
+	return S_OK;
+}
+
+HRESULT Visualizer::Resize()
+{
+	OK(TransparentWindow3D::Resize());
+
+	D3D11_VIEWPORT viewport
 	{
-		D3D11_INPUT_ELEMENT_DESC inputElementDesc[] =
-		{
-			{ "POS", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-			{ "COL", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 }
-		};
+		0.0f, 
+		0.0f,
+		(FLOAT)(this->size.right - this->size.left), 
+		(FLOAT)(this->size.bottom - this->size.top),
+		0.0f, 
+		1.0f 
+	};
+	this->d3dDeviceContext->RSSetViewports(1, &viewport);
 
-		this->shader = Shader(this->d3dDevice.Get(), L"Shader/Shader.hlsl", inputElementDesc, 2);
-	}
-
-	{
-		PositionColorVertex data[] = 
-		{
-			{ { 0.0f,  0.5f,  0.0f }, { 0.f, 1.f, 0.f, 0.5f } },
-			{ { 0.5f,  -0.5f, 0.0f }, { 1.f, 0.f, 0.f, 0.5f } },
-			{ { -0.5f, -0.5f, 0.0f }, { 0.f, 0.f, 1.f, 0.5f } }
-		};
-		this->vertices = VertexBuffer(this->d3dDevice.Get(), 3, data);
-	}
+	this->camera.Projection = Matrix4F::YRotation(-Geometry::PiOver2)
+		* Matrix4F::ZRotation(-Geometry::PiOver2)
+		* Matrix4F::Perspective(
+			Geometry::ToRadians(70.0f),
+			(FLOAT)(this->size.right - this->size.left),
+			(FLOAT)(this->size.bottom - this->size.top),
+			25.0f,
+			10000.0f);
 
 	return S_OK;
 }
@@ -112,14 +138,18 @@ LRESULT Visualizer::Render()
 	// End and present
 	context->EndDraw();
 	
-	D3D11_VIEWPORT viewport = { 0.0f, 0.0f, (FLOAT)(this->size.right - this->size.left), (FLOAT)(this->size.bottom - this->size.top), 0.0f, 1.0f };
-	this->d3dDeviceContext->RSSetViewports(1, &viewport);
-	this->d3dDeviceContext->OMSetRenderTargets(1, this->d3dBackBufferView.GetAddressOf(), nullptr);
+	this->d3dDeviceContext->ClearDepthStencilView(
+		this->d3dDepthStencilView.Get(),
+		D3D11_CLEAR_DEPTH,
+		1.0f,
+		0);
+	this->d3dDeviceContext->OMSetRenderTargets(
+		1, 
+		this->d3dBackBufferView.GetAddressOf(),
+		this->d3dDepthStencilView.Get());
 
-	this->d3dDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	this->shader.Apply();
-	this->vertices.Set();
-	this->vertices.Draw();
+	this->camera.Activate();
+	this->cube.Render();
 	
 	this->dxgiSwapChain->Present(1, 0);
 	return 0;
@@ -127,7 +157,11 @@ LRESULT Visualizer::Render()
 
 void Visualizer::Update(double delta)
 {
-	
+	this->theta += delta;
+	this->cube.Transform() = Matrix4F::Scale(100.0f) 
+		* Matrix4F::YRotation(this->theta) 
+		* Matrix4F::XRotation(0.45f * this->theta)
+		* Matrix4F::ZRotation(0.85f * this->theta);
 }
 
 LRESULT Visualizer::Close()

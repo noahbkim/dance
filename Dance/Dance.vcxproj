@@ -150,14 +150,15 @@
     <ClInclude Include="Common\d3dx12.h" />
     <ClInclude Include="Common\Graphics.h" />
     <ClInclude Include="Common\Read.h" />
-    <ClInclude Include="Common\StepTimer.h" />
     <ClInclude Include="Core\Capture.h" />
     <ClInclude Include="Core\Runtime.h" />
     <ClInclude Include="Core\Window.h" />
     <ClInclude Include="Engine\Common\Buffer.h" />
     <ClInclude Include="Engine\Common\Shader.h" />
     <ClInclude Include="Engine\Common\Primitive.h" />
-    <ClInclude Include="Engine\D3D\Shorthand.h" />
+    <ClInclude Include="Engine\Cube.h" />
+    <ClInclude Include="Engine\D3D\Camera.h" />
+    <ClInclude Include="Engine\D3D\Renderable.h" />
     <ClInclude Include="Framework.h" />
     <ClInclude Include="Mathematics.h" />
     <ClInclude Include="Mathematics\Matrix3.h" />

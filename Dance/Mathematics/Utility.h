@@ -2,7 +2,7 @@
 
 #include <cmath>
 
-#define ARRAY_SIZE(x) (sizeof(x)/sizeof(x[0]))
+#define lengthof(x) (sizeof(x)/sizeof(x[0]))
 
 namespace Geometry
 {

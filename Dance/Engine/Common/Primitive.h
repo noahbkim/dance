@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Mathematics.h"
+
 struct Position3
 {
 	float x;
@@ -7,26 +9,24 @@ struct Position3
 	float z;
 };
 
+template<typename T = float>
 struct Color4
 {
-    Color4() : r(0), g(0), b(0), a(1.0) {}
-    Color4(float r, float g, float b, float a = 1.0f)
-        : r(r)
-        , g(g)
-        , b(b)
-        , a(a) {}
+    T r;
+    T g;
+    T b;
+    T a;
 
-    float r;
-    float g;
-    float b;
-    float a;
+    Color4() : r(0), g(0), b(0), a(1) {}
+    Color4(T r, T g, T b, T a = static_cast<T>(1)) : r(r), g(g), b(b), a(a) {}
 };
 
-struct PositionColorVertex
+using Color4F = Color4<float>;
+
+struct Vertex
 {
-    Position3 position;
-    Color4 color;
+    Vector3F Position;
+    Vector3F Normal;
+    Color4F Color;
+    float UV[2];
 };
-
-using PCVertex = PositionColorVertex;
-using PositionColor = PositionColorVertex;
