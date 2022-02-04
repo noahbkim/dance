@@ -179,14 +179,15 @@ AudioAnalyzer::AudioAnalyzer() : AudioListener() {}
 
 AudioAnalyzer::AudioAnalyzer(ComPtr<IMMDevice> device, REFERENCE_TIME duration) 
     : AudioListener(device, duration)
+    , fftwPlan()
 {
     // The window is how much data we will ever analyze at once; we calculate it from duration
     this->window = duration * this->waveFormat->nSamplesPerSec / ONE_SECOND;
     TRACE("window: " << this->window);
 
     // Resize the data container to fit our window continuously at any index
-    this->data.resize(this->window);
-    this->in.resize(this->window);
+    this->buffer.resize(this->window);
+    this->fftwBuffer.resize(this->window);
 }
 
 /*
@@ -224,12 +225,7 @@ void AudioAnalyzer::Handle(PCMAudioFrame* data, UINT32 count, DWORD flags)
     // Write as ring
     for (size_t i = 0; i < count; ++i)
     {
-        size_t destination = (this->index + i) % this->window;
-        this->data[destination] = 
-        { 
-            static_cast<float>(data[i].l),
-            0 // static_cast<float>(data[i].r) 
-        };
+        this->buffer[(this->index + i) % this->window].real = static_cast<float>(data[i].left);
     }
 
     // Update index, count, and timestamp
@@ -238,18 +234,19 @@ void AudioAnalyzer::Handle(PCMAudioFrame* data, UINT32 count, DWORD flags)
     // TRACE("index: " << this->index << ", count: " << this->count << ", time: " << this->timestamp.QuadPart);
 }
 
-
-
-void AudioAnalyzer::Analyze(fftwf_complex* out)
+void AudioAnalyzer::Analyze()
 {
-    fftwf_plan plan = ::fftwf_plan_dft_1d(
+    auto end = std::copy(this->buffer.begin() + this->index, this->buffer.end(), this->fftwBuffer.begin());
+    std::copy(this->buffer.begin(), this->buffer.begin() + index, end);
+    this->fftwPlan.Execute();
+}
+
+void AudioAnalyzer::Sink(fftwf_complex* out)
+{
+    this->fftwPlan.Overwrite(::fftwf_plan_dft_1d(
         this->window,
-        reinterpret_cast<fftwf_complex*>(this->in.data()),
+        reinterpret_cast<fftwf_complex*>(this->fftwBuffer.data()),
         out,
         FFTW_FORWARD,
-        FFTW_MEASURE);
-
-    auto end = std::copy(this->data.begin() + this->index, this->data.end(), this->in.begin());
-    std::copy(this->data.begin(), this->data.begin() + index, end);
-    ::fftwf_execute(plan);
+        FFTW_MEASURE));
 }

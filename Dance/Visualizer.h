@@ -38,7 +38,7 @@ private:
 
     std::vector<FFTWFComplex> spectrum;
     AudioAnalyzer analyzer;
-
+    
     /*
     Camera camera;
     Cube cube;

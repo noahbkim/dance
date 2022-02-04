@@ -25,9 +25,8 @@ HRESULT Visualizer::Create()
 	TRACE("capturing " << getDeviceFriendlyName(device.Get()));
 	this->analyzer = AudioAnalyzer(device, ONE_SECOND / 10);
 	this->spectrum.resize(this->analyzer.Window());
+	this->analyzer.Sink(reinterpret_cast<fftwf_complex*>(this->spectrum.data()));
 	this->analyzer.Enable();
-
-	// this->analyzerThread = CreateThread(nullptr, 0, AudioAnalyzer::Thread, &this->analyzer, 0, nullptr);
 
 	TransparentWindow3D::Create();
 
@@ -158,9 +157,9 @@ LRESULT Visualizer::Render()
 	const FLOAT w = this->size.right - this->size.left;
 	const FLOAT h = this->size.bottom - this->size.top;
 
-	const size_t N = 50;
+	const size_t N = 80;
 
-	const size_t S = this->spectrum.size() / 2;
+	const size_t S = this->spectrum.size() / 2 / 24;
 	const size_t Q = S / N;
 
 	D2D1_RECT_F stroke;
@@ -172,14 +171,14 @@ LRESULT Visualizer::Render()
 		FLOAT level = 0.0f;
 		for (size_t j = Q * i; j < Q * (i + 1); ++j)
 		{
-			const FLOAT re = this->spectrum[i].l / this->spectrum.size();
-			const FLOAT im = this->spectrum[i].l / this->spectrum.size();
+			const FLOAT re = this->spectrum[j].real / this->spectrum.size();
+			const FLOAT im = this->spectrum[j].imaginary / this->spectrum.size();
 			level += std::sqrtf(re * re + im * im) / Q;
 		}
 
 		stroke = {
 			std::round(left),
-			h - level,
+			h - 30 * std::log2f(level),
 			std::round(left + u),
 			h
 		};
@@ -212,14 +211,8 @@ void Visualizer::Update(double delta)
 {
 	if (this->analyzer.Listen())
 	{
-		this->analyzer.Analyze(reinterpret_cast<fftwf_complex*>(this->spectrum.data()));
+		this->analyzer.Analyze();
 	}
-
-	/*
-	fftwf_complex* in = reinterpret_cast<fftwf_complex*>(this->capture.Buffer.Buffer.data() +);
-	fftwf_complex* out = this->levels.data();
-	fftwf_plan plan = fftwf_plan_dft_1d(this->capture.BufferFrameCount, in, out, FFTW_FORWARD, FFTW_ESTIMATE);
-	*/
 
 	/*
 	this->theta += delta;
@@ -293,9 +286,6 @@ LRESULT Visualizer::Command(WPARAM wParam, LPARAM lParam)
 
 LRESULT Visualizer::Close()
 {
-	// this->analyzer.Stop();
-	// WaitForSingleObject(this->analyzerThread, INFINITE);
-
 	this->analyzer.Disable();
 	this->Destroy();
 	::PostQuitMessage(0);

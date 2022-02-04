@@ -20,8 +20,8 @@ std::wstring getDeviceFriendlyName(ComPtr<IMMDevice> device);
 
 struct PCMAudioFrame
 {
-    INT16 l;
-    INT16 r;
+    INT16 left;
+    INT16 right;
 };
 
 class AudioListener
@@ -52,8 +52,43 @@ private:
 
 struct FFTWFComplex
 {
-    float l;
-    float r;
+    float real;
+    float imaginary;
+};
+
+class FFTWFPlan
+{
+public:
+    FFTWFPlan() : created(false) {}
+
+    FFTWFPlan(fftwf_plan plan) : plan(plan), created(true) {}
+
+    ~FFTWFPlan()
+    {
+        if (this->created)
+        {
+            ::fftwf_destroy_plan(this->plan);
+        }
+    }
+
+    void Overwrite(fftwf_plan plan)
+    {
+        if (this->created)
+        {
+            ::fftwf_destroy_plan(this->plan);
+        }
+
+        this->plan = plan;
+    }
+
+    void Execute() const
+    {
+        ::fftwf_execute(this->plan);
+    }
+
+private:
+    fftwf_plan plan;
+    bool created;
 };
 
 class AudioAnalyzer : public AudioListener
@@ -64,7 +99,9 @@ public:
 
     virtual bool Listen();
     virtual void Handle(PCMAudioFrame* data, UINT32 count, DWORD flags);
-    void Analyze(fftwf_complex* out);
+    void Analyze();
+
+    void Sink(fftwf_complex* out);
 
     size_t Window() const
     {
@@ -77,12 +114,12 @@ protected:
     size_t rate{ 0 };
 
     // Buffer
-    std::vector<FFTWFComplex> data;
+    std::vector<FFTWFComplex> buffer;
     size_t index{ 0 };
     size_t count{ 0 };
     LARGE_INTEGER timestamp{ 0 };
 
     // FFT
-    fftwf_plan plan;
-    std::vector<FFTWFComplex> in;
+    FFTWFPlan fftwPlan;
+    std::vector<FFTWFComplex> fftwBuffer;
 };
