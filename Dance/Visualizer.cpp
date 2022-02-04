@@ -15,21 +15,16 @@ Visualizer::Visualizer
 )
 	: TransparentWindow3D(instance, windowClassName, windowTitle)
 	, Runtime()
-	, levels(5)
 {
-	this->levels.at(0) = { 0, 1 };
-	this->levels.at(1) = { 0.5, 1 };
-	this->levels.at(2) = { 0.75, 1 };
-	this->levels.at(3) = { 0.25, 1 };
-	this->levels.at(4) = { 0.1, 1 };
+
 }
 
 HRESULT Visualizer::Create()
 {
 	ComPtr<IMMDevice> device = getDefaultDevice();
 	TRACE("capturing " << getDeviceFriendlyName(device.Get()));
-	this->capture = Capture(device);
-	this->captureThread = CreateThread(nullptr, 0, Capture::Main, &this->capture, 0, nullptr);
+	this->analyzer = AudioAnalyzer(device, ONE_SECOND, 480);
+	this->analyzerThread = CreateThread(nullptr, 0, AudioAnalyzer::Thread, &this->analyzer, 0, nullptr);
 
 	TransparentWindow3D::Create();
 
@@ -164,17 +159,19 @@ LRESULT Visualizer::Render()
 	const FLOAT b = 4;
 	const FLOAT u = w / ((b + 1) * this->levels.size() + 1);
 
+	/*
 	for (size_t i = 0; i < this->levels.size(); ++i)
 	{
 		const FLOAT left = u * ((b + 1) * i + 1);
 		stroke = {
 			std::round(left),
-			h * (1.0f - this->levels[i].level),
+			h * (1.0f - this->levels[i][0] / this->capture.BufferFrameCount),
 			std::round(left + b * u),
 			h
 		};
 		context->FillRectangle(stroke, brush.Get());
 	}
+	*/
 
 	// End and present
 	context->EndDraw();
@@ -200,20 +197,11 @@ LRESULT Visualizer::Render()
 
 void Visualizer::Update(double delta)
 {
-	for (Bar& bar : this->levels)
-	{
-		bar.level += delta * bar.direction / 2;
-		if (bar.level >= 1.0)
-		{
-			bar.level = 1.0;
-			bar.direction = -1;
-		}
-		else if (bar.level <= 0.0)
-		{
-			bar.level = 0.0;
-			bar.direction = 1;
-		}
-	}
+	/*
+	fftwf_complex* in = reinterpret_cast<fftwf_complex*>(this->capture.Buffer.Buffer.data() +);
+	fftwf_complex* out = this->levels.data();
+	fftwf_plan plan = fftwf_plan_dft_1d(this->capture.BufferFrameCount, in, out, FFTW_FORWARD, FFTW_ESTIMATE);
+	*/
 
 	/*
 	this->theta += delta;
@@ -287,8 +275,8 @@ LRESULT Visualizer::Command(WPARAM wParam, LPARAM lParam)
 
 LRESULT Visualizer::Close()
 {
-	this->capture.Kill();
-	WaitForSingleObject(this->captureThread, INFINITE);
+	this->analyzer.Stop();
+	WaitForSingleObject(this->analyzerThread, INFINITE);
 
 	this->Destroy();
 	::PostQuitMessage(0);

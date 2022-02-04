@@ -2,12 +2,13 @@
 
 #include "Core/Window.h"
 #include "Core/Runtime.h"
-#include "Core/Capture.h"
+#include "Core/Audio.h"
 #include "Engine/Common/Primitive.h"
 #include "Engine/Common/Buffer.h"
 #include "Engine/Common/Shader.h"
 #include "Engine/D3d/Camera.h"
 #include "Engine/Cube.h"
+#include "FFTW3/fftw3.h"
 
 struct Bar
 {
@@ -41,9 +42,9 @@ private:
     bool mouseHovering = false;
     bool mouseTracking = false;
 
-    std::vector<Bar> levels;
-    Capture capture;
-    HANDLE captureThread;
+    std::vector<fftwf_complex> levels;
+    AudioAnalyzer analyzer;
+    HANDLE analyzerThread;
 
     /*
     Camera camera;

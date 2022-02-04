@@ -36,7 +36,7 @@
     <ClInclude Include="Visualizer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Core\Capture.h">
+    <ClInclude Include="Core\Audio.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Core\Window.h">
@@ -101,7 +101,7 @@
     <ClCompile Include="Visualizer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Core\Capture.cpp">
+    <ClCompile Include="Core\Audio.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
