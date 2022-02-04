@@ -23,7 +23,7 @@ HRESULT Visualizer::Create()
 {
 	ComPtr<IMMDevice> device = getDefaultDevice();
 	TRACE("capturing " << getDeviceFriendlyName(device.Get()));
-	this->analyzer = AudioAnalyzer(device, ONE_SECOND / 20);
+	this->analyzer = AudioAnalyzer(device, ONE_SECOND / 10);
 	this->spectrum.resize(this->analyzer.Window());
 	this->analyzer.Enable();
 
@@ -158,17 +158,29 @@ LRESULT Visualizer::Render()
 	const FLOAT w = this->size.right - this->size.left;
 	const FLOAT h = this->size.bottom - this->size.top;
 
-	D2D1_RECT_F stroke;
-	const FLOAT b = 4;
-	const FLOAT u = w / ((b + 1) * this->spectrum.size() + 1);
+	const size_t N = 50;
 
-	for (size_t i = 0; i < this->spectrum.size(); i += 2)
+	const size_t S = this->spectrum.size() / 2;
+	const size_t Q = S / N;
+
+	D2D1_RECT_F stroke;
+	const FLOAT u = w / N;
+
+	for (size_t i = 0; i < N; ++i)
 	{
-		const FLOAT left = u * ((b + 1) * i + 1);
+		const FLOAT left = u * i;
+		FLOAT level = 0.0f;
+		for (size_t j = Q * i; j < Q * (i + 1); ++j)
+		{
+			const FLOAT re = this->spectrum[i].l / this->spectrum.size();
+			const FLOAT im = this->spectrum[i].l / this->spectrum.size();
+			level += std::sqrtf(re * re + im * im) / Q;
+		}
+
 		stroke = {
 			std::round(left),
-			h * (1.0f - this->spectrum[i].l / this->spectrum.size()),
-			std::round(left + b * u),
+			h - level,
+			std::round(left + u),
 			h
 		};
 		context->FillRectangle(stroke, brush.Get());
@@ -200,7 +212,6 @@ void Visualizer::Update(double delta)
 {
 	if (this->analyzer.Listen())
 	{
-		TRACE("analyze");
 		this->analyzer.Analyze(reinterpret_cast<fftwf_complex*>(this->spectrum.data()));
 	}
 

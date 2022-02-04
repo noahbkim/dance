@@ -72,6 +72,8 @@ AudioListener::AudioListener(ComPtr<IMMDevice> device, REFERENCE_TIME duration) 
 
     // Calculate the true buffer duration
     this->bufferDuration = (double)ONE_SECOND * this->bufferSize / this->waveFormat->nSamplesPerSec;
+
+    TRACE("buffer size: " << this->bufferSize << ", buffer duration: " << this->bufferDuration << ", rate: " << this->waveFormat->nSamplesPerSec);
 }
 
 bool AudioListener::Listen()
@@ -183,8 +185,16 @@ AudioAnalyzer::AudioAnalyzer(ComPtr<IMMDevice> device, REFERENCE_TIME duration)
     TRACE("window: " << this->window);
 
     // Resize the data container to fit our window continuously at any index
-    this->data.resize(this->window * 2);
+    this->data.resize(this->window);
+    this->in.resize(this->window);
 }
+
+/*
+AudioAnalyzer::~AudioAnalyzer()
+{
+    // ::fftwf_destroy_plan(this->plan);
+}
+*/
 
 bool AudioAnalyzer::Listen()
 {
@@ -214,13 +224,12 @@ void AudioAnalyzer::Handle(PCMAudioFrame* data, UINT32 count, DWORD flags)
     // Write as ring
     for (size_t i = 0; i < count; ++i)
     {
-        size_t destination = this->index + i;
-        FFTWFComplex& high = this->data[destination];
-        high.l = static_cast<float>(data[i].l);
-        high.r = static_cast<float>(data[i].r);
-        FFTWFComplex& low = this->data[destination % this->window];
-        low.l = static_cast<float>(data[i].l);
-        low.r = static_cast<float>(data[i].r);
+        size_t destination = (this->index + i) % this->window;
+        this->data[destination] = 
+        { 
+            static_cast<float>(data[i].l),
+            0 // static_cast<float>(data[i].r) 
+        };
     }
 
     // Update index, count, and timestamp
@@ -229,13 +238,18 @@ void AudioAnalyzer::Handle(PCMAudioFrame* data, UINT32 count, DWORD flags)
     // TRACE("index: " << this->index << ", count: " << this->count << ", time: " << this->timestamp.QuadPart);
 }
 
+
+
 void AudioAnalyzer::Analyze(fftwf_complex* out)
 {
-    fftwf_plan plan = fftwf_plan_dft_1d(
+    fftwf_plan plan = ::fftwf_plan_dft_1d(
         this->window,
-        reinterpret_cast<fftwf_complex*>(this->data.data() + this->index), 
+        reinterpret_cast<fftwf_complex*>(this->in.data()),
         out,
         FFTW_FORWARD,
-        FFTW_ESTIMATE);
-    fftwf_execute(plan);
+        FFTW_MEASURE);
+
+    auto end = std::copy(this->data.begin() + this->index, this->data.end(), this->in.begin());
+    std::copy(this->data.begin(), this->data.begin() + index, end);
+    ::fftwf_execute(plan);
 }

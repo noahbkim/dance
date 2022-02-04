@@ -82,7 +82,7 @@ protected:
     size_t count{ 0 };
     LARGE_INTEGER timestamp{ 0 };
 
-    // State
-    size_t bookmarkIndex{ 0 };
-    LARGE_INTEGER bookmarkTimestamp{ 0 };
+    // FFT
+    fftwf_plan plan;
+    std::vector<FFTWFComplex> in;
 };
