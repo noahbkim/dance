@@ -23,8 +23,11 @@ HRESULT Visualizer::Create()
 {
 	ComPtr<IMMDevice> device = getDefaultDevice();
 	TRACE("capturing " << getDeviceFriendlyName(device.Get()));
-	this->analyzer = AudioAnalyzer(device, ONE_SECOND, 480);
-	this->analyzerThread = CreateThread(nullptr, 0, AudioAnalyzer::Thread, &this->analyzer, 0, nullptr);
+	this->analyzer = AudioAnalyzer(device, ONE_SECOND / 20);
+	this->spectrum.resize(this->analyzer.Window());
+	this->analyzer.Enable();
+
+	// this->analyzerThread = CreateThread(nullptr, 0, AudioAnalyzer::Thread, &this->analyzer, 0, nullptr);
 
 	TransparentWindow3D::Create();
 
@@ -157,21 +160,19 @@ LRESULT Visualizer::Render()
 
 	D2D1_RECT_F stroke;
 	const FLOAT b = 4;
-	const FLOAT u = w / ((b + 1) * this->levels.size() + 1);
+	const FLOAT u = w / ((b + 1) * this->spectrum.size() + 1);
 
-	/*
-	for (size_t i = 0; i < this->levels.size(); ++i)
+	for (size_t i = 0; i < this->spectrum.size(); i += 2)
 	{
 		const FLOAT left = u * ((b + 1) * i + 1);
 		stroke = {
 			std::round(left),
-			h * (1.0f - this->levels[i][0] / this->capture.BufferFrameCount),
+			h * (1.0f - this->spectrum[i].l / this->spectrum.size()),
 			std::round(left + b * u),
 			h
 		};
 		context->FillRectangle(stroke, brush.Get());
 	}
-	*/
 
 	// End and present
 	context->EndDraw();
@@ -197,6 +198,12 @@ LRESULT Visualizer::Render()
 
 void Visualizer::Update(double delta)
 {
+	if (this->analyzer.Listen())
+	{
+		TRACE("analyze");
+		this->analyzer.Analyze(reinterpret_cast<fftwf_complex*>(this->spectrum.data()));
+	}
+
 	/*
 	fftwf_complex* in = reinterpret_cast<fftwf_complex*>(this->capture.Buffer.Buffer.data() +);
 	fftwf_complex* out = this->levels.data();
@@ -275,9 +282,10 @@ LRESULT Visualizer::Command(WPARAM wParam, LPARAM lParam)
 
 LRESULT Visualizer::Close()
 {
-	this->analyzer.Stop();
-	WaitForSingleObject(this->analyzerThread, INFINITE);
+	// this->analyzer.Stop();
+	// WaitForSingleObject(this->analyzerThread, INFINITE);
 
+	this->analyzer.Disable();
 	this->Destroy();
 	::PostQuitMessage(0);
 	return 0;

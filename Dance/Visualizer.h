@@ -10,12 +10,6 @@
 #include "Engine/Cube.h"
 #include "FFTW3/fftw3.h"
 
-struct Bar
-{
-    float level;
-    int direction;
-};
-
 class Visualizer : public TransparentWindow3D, public Runtime
 {
 public:
@@ -42,9 +36,8 @@ private:
     bool mouseHovering = false;
     bool mouseTracking = false;
 
-    std::vector<fftwf_complex> levels;
+    std::vector<FFTWFComplex> spectrum;
     AudioAnalyzer analyzer;
-    HANDLE analyzerThread;
 
     /*
     Camera camera;

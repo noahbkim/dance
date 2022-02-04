@@ -41,7 +41,7 @@ std::wstring getDeviceFriendlyName(ComPtr<IMMDevice> device)
 
 AudioListener::AudioListener() : mmDevice(nullptr) {}
 
-AudioListener::AudioListener(ComPtr<IMMDevice> device, REFERENCE_TIME duration) : mmDevice(device), interval(interval)
+AudioListener::AudioListener(ComPtr<IMMDevice> device, REFERENCE_TIME duration) : mmDevice(device)
 {
     // Active the multimedia device and get an audio client
     OKE(this->mmDevice->Activate(
@@ -74,7 +74,7 @@ AudioListener::AudioListener(ComPtr<IMMDevice> device, REFERENCE_TIME duration) 
     this->bufferDuration = (double)ONE_SECOND * this->bufferSize / this->waveFormat->nSamplesPerSec;
 }
 
-HRESULT AudioListener::Listen()
+bool AudioListener::Listen()
 {
     // https://docs.microsoft.com/en-us/windows/win32/coreaudio/capturing-a-stream
     PCMAudioFrame* data;
@@ -82,11 +82,13 @@ HRESULT AudioListener::Listen()
     UINT32 count;
 
     // Loop over available packets
-    OK(this->audioCaptureClient->GetNextPacketSize(&count));
+    OKE(this->audioCaptureClient->GetNextPacketSize(&count));
+    bool available = count > 0;
+
     while (count != 0)
     {
         // This overewrites count with the real size of the buffer
-        OK(this->audioCaptureClient->GetBuffer(
+        OKE(this->audioCaptureClient->GetBuffer(
             reinterpret_cast<BYTE**>(&data),
             &count,
             &flags,
@@ -96,16 +98,29 @@ HRESULT AudioListener::Listen()
         this->Handle(data, count, flags);
 
         // Release the data we just asked for
-        OK(this->audioCaptureClient->ReleaseBuffer(count));
+        OKE(this->audioCaptureClient->ReleaseBuffer(count));
 
         // Separately, ask for the new packet size in case there's another to process
-        OK(this->audioCaptureClient->GetNextPacketSize(&count));
+        OKE(this->audioCaptureClient->GetNextPacketSize(&count));
     }
+
+    return available;
 }
 
-void AudioListener::Start()
+
+HRESULT AudioListener::Enable()
 {
-    OKE(this->audioClient->Start());
+    OK(this->audioClient->Start());
+    return S_OK;
+}
+
+HRESULT AudioListener::Disable()
+{
+    OK(this->audioClient->Stop());
+    return S_OK;
+}
+
+/*
 
     this->listening = true;
     while (this->listening)
@@ -114,13 +129,11 @@ void AudioListener::Start()
         this->Listen();
     }
 
-    OKE(this->audioClient->Stop());
-}
-
 void AudioListener::Stop()
 {
     this->listening = false;
 }
+*/
 
 HRESULT AudioListener::DetermineWaveFormat()
 {
@@ -162,15 +175,19 @@ HRESULT AudioListener::DetermineWaveFormat()
 
 AudioAnalyzer::AudioAnalyzer() : AudioListener() {}
 
-AudioAnalyzer::AudioAnalyzer(ComPtr<IMMDevice> device, REFERENCE_TIME duration, size_t window)
+AudioAnalyzer::AudioAnalyzer(ComPtr<IMMDevice> device, REFERENCE_TIME duration) 
     : AudioListener(device, duration)
-    , window(window)
-{}
-
-HRESULT AudioAnalyzer::Listen()
 {
-    this->bookmarkIndex = this->index;
-    this->bookmarkTimestamp = this->timestamp;
+    // The window is how much data we will ever analyze at once; we calculate it from duration
+    this->window = duration * this->waveFormat->nSamplesPerSec / ONE_SECOND;
+    TRACE("window: " << this->window);
+
+    // Resize the data container to fit our window continuously at any index
+    this->data.resize(this->window * 2);
+}
+
+bool AudioAnalyzer::Listen()
+{
     return AudioListener::Listen();
 }
 
@@ -187,31 +204,38 @@ void AudioAnalyzer::Handle(PCMAudioFrame* data, UINT32 count, DWORD flags)
         TRACE("silent!");
     }
 
-    const size_t capacity = this->data.size();
-
-    // In the case that the new data is longer than the buffer, start where there's only one buffer left
-    if (count > capacity)
+    // In the case that the new data is longer than the window, start where there's only one window left
+    if (count > this->window)
     {
-        data += count - capacity;
-        count = capacity;
+        data += count - this->window;
+        count = this->window;
     }
 
     // Write as ring
     for (size_t i = 0; i < count; ++i)
     {
-        fftwf_complex& destination = this->data[(this->index + i) % capacity];
-        destination[0] = static_cast<float>(data[i][0]);
-        destination[1] = static_cast<float>(data[i][1]);
+        size_t destination = this->index + i;
+        FFTWFComplex& high = this->data[destination];
+        high.l = static_cast<float>(data[i].l);
+        high.r = static_cast<float>(data[i].r);
+        FFTWFComplex& low = this->data[destination % this->window];
+        low.l = static_cast<float>(data[i].l);
+        low.r = static_cast<float>(data[i].r);
     }
 
     // Update index, count, and timestamp
-    this->index = (this->index + count) % capacity;
-    this->count = std::min(this->count + count, capacity);
+    this->index = (this->index + count) % this->window;
+    this->count = std::min(this->count + count, this->window);
     // TRACE("index: " << this->index << ", count: " << this->count << ", time: " << this->timestamp.QuadPart);
 }
 
-DWORD WINAPI AudioAnalyzer::Thread(LPVOID lpParam)
+void AudioAnalyzer::Analyze(fftwf_complex* out)
 {
-    reinterpret_cast<AudioAnalyzer*>(lpParam)->Start();
-    return 0;
+    fftwf_plan plan = fftwf_plan_dft_1d(
+        this->window,
+        reinterpret_cast<fftwf_complex*>(this->data.data() + this->index), 
+        out,
+        FFTW_FORWARD,
+        FFTW_ESTIMATE);
+    fftwf_execute(plan);
 }

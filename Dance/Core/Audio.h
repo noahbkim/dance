@@ -18,7 +18,11 @@ ComPtr<IMMDevice> getDefaultDevice();
 std::wstring getDeviceId(ComPtr<IMMDevice> device);
 std::wstring getDeviceFriendlyName(ComPtr<IMMDevice> device);
 
-using PCMAudioFrame = INT16[2];
+struct PCMAudioFrame
+{
+    INT16 l;
+    INT16 r;
+};
 
 class AudioListener
 {
@@ -26,8 +30,9 @@ public:
     AudioListener();
     AudioListener(ComPtr<IMMDevice> device, REFERENCE_TIME duration);
 
-    void Start();
-    void Stop();
+    virtual HRESULT Enable();
+    virtual bool Listen();
+    virtual HRESULT Disable();
 
 protected:
     ComPtr<IMMDevice> mmDevice;
@@ -35,12 +40,9 @@ protected:
     ComPtr<IAudioCaptureClient> audioCaptureClient = nullptr;
     std::unique_ptr<WAVEFORMATEX, CoTaskDeleter<WAVEFORMATEX>> waveFormat = nullptr;
 
-    DWORD interval{ 0 };
-
     UINT32 bufferSize{ 0 };
     REFERENCE_TIME bufferDuration{ 0 };
 
-    virtual HRESULT Listen();
     virtual void Handle(PCMAudioFrame* data, UINT32 count, DWORD flags) = 0;
     
 private:
@@ -48,16 +50,26 @@ private:
     bool listening = false;
 };
 
+struct FFTWFComplex
+{
+    float l;
+    float r;
+};
+
 class AudioAnalyzer : public AudioListener
 {
 public:
     AudioAnalyzer();
-    AudioAnalyzer(ComPtr<IMMDevice> device, REFERENCE_TIME duration, size_t window);
+    AudioAnalyzer(ComPtr<IMMDevice> device, REFERENCE_TIME duration);
 
-    virtual HRESULT Listen();
+    virtual bool Listen();
     virtual void Handle(PCMAudioFrame* data, UINT32 count, DWORD flags);
+    void Analyze(fftwf_complex* out);
 
-    static DWORD WINAPI Thread(LPVOID lpParam);
+    size_t Window() const
+    {
+        return this->window;
+    }
 
 protected:
     // Parameters
@@ -65,7 +77,7 @@ protected:
     size_t rate{ 0 };
 
     // Buffer
-    std::vector<fftwf_complex> data;
+    std::vector<FFTWFComplex> data;
     size_t index{ 0 };
     size_t count{ 0 };
     LARGE_INTEGER timestamp{ 0 };
