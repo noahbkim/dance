@@ -6,7 +6,7 @@
 #include "Engine/Common/Primitive.h"
 #include "Engine/Common/Buffer.h"
 #include "Engine/Common/Shader.h"
-#include "Engine/D3d/Camera.h"
+#include "Engine/Common/Camera.h"
 #include "Engine/Cube.h"
 #include "FFTW3/fftw3.h"
 
@@ -39,11 +39,9 @@ private:
     std::vector<FFTWFComplex> spectrum;
     AudioAnalyzer analyzer;
     
-    /*
     Camera camera;
     Cube cube;
     float theta;
-    */
 
     void RenderBorder();
 };

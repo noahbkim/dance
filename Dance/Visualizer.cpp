@@ -1,5 +1,5 @@
 #include "Visualizer.h"
-#include "Engine/D3D/Camera.h"
+#include "Engine/Common/Camera.h"
 #include "Mathematics.h"
 #include "FFTW3/fftw3.h"
 
@@ -30,7 +30,6 @@ HRESULT Visualizer::Create()
 
 	TransparentWindow3D::Create();
 
-	/*
 	this->d3dDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	GetClientRect(this->window.get(), &this->size);
@@ -47,7 +46,6 @@ HRESULT Visualizer::Create()
 	this->cube = Cube(this->d3dDevice);
 	this->camera = Camera(this->d3dDevice, worldToCamera, projection);
 	this->theta = 0.0f;
-	*/
 
 	return S_OK;
 }
@@ -56,7 +54,6 @@ HRESULT Visualizer::Resize()
 {
 	OK(TransparentWindow3D::Resize());
 
-	/*
 	D3D11_VIEWPORT viewport
 	{
 		0.0f, 
@@ -76,7 +73,6 @@ HRESULT Visualizer::Resize()
 			(FLOAT)(this->size.bottom - this->size.top),
 			25.0f,
 			10000.0f);
-	*/
 
 	return S_OK;
 }
@@ -157,7 +153,7 @@ LRESULT Visualizer::Render()
 	const FLOAT w = this->size.right - this->size.left;
 	const FLOAT h = this->size.bottom - this->size.top;
 
-	const size_t N = 80;
+	const size_t N = 30;
 
 	const size_t S = this->spectrum.size() / 2 / 24;
 	const size_t Q = S / N;
@@ -188,7 +184,7 @@ LRESULT Visualizer::Render()
 	// End and present
 	context->EndDraw();
 
-	/*
+	
 	this->d3dDeviceContext->ClearDepthStencilView(
 		this->d3dDepthStencilView.Get(),
 		D3D11_CLEAR_DEPTH,
@@ -201,7 +197,7 @@ LRESULT Visualizer::Render()
 
 	this->camera.Activate();
 	this->cube.Render();
-	*/
+	
 	
 	this->dxgiSwapChain->Present(1, 0);
 	return 0;
@@ -214,13 +210,11 @@ void Visualizer::Update(double delta)
 		this->analyzer.Analyze();
 	}
 
-	/*
 	this->theta += delta;
 	this->cube.Transform() = Matrix4F::Scale(200.0f) 
 		* Matrix4F::YRotation(this->theta) 
 		* Matrix4F::XRotation(0.45f * this->theta)
 		* Matrix4F::ZRotation(0.85f * this->theta);
-	*/
 }
 
 LRESULT Visualizer::MouseMove(WPARAM wParam, LPARAM lParam)

@@ -293,53 +293,7 @@ HRESULT TransparentWindow::Create()
 		this->dxgiDevice.Get(),
 		this->d2dDevice.ReleaseAndGetAddressOf()));
 
-	// Create the Direct2D device context that is the actual render target
-	// and exposes drawing commands
-	OK(this->d2dDevice->CreateDeviceContext(
-		D2D1_DEVICE_CONTEXT_OPTIONS_NONE,
-		this->d2dDeviceContext.ReleaseAndGetAddressOf()));
-
-	OK(this->CreateSurface());
-	OK(this->CreateBitmap());
 	OK(this->CreateComposition());
-}
-
-HRESULT TransparentWindow::CreateSurface()
-{
-	// Retrieve the swap chain's back buffer
-	OK(this->dxgiSwapChain->GetBuffer(
-		0,
-		__uuidof(this->dxgiSurface),
-		reinterpret_cast<void**>(this->dxgiSurface.ReleaseAndGetAddressOf())));
-
-	return S_OK;
-}
-
-HRESULT TransparentWindow::ReleaseSurface()
-{
-	this->dxgiSurface = nullptr;
-	return S_OK;
-}
-
-HRESULT TransparentWindow::CreateBitmap()
-{
-	// Create a Direct2D bitmap that points to the swap chain surface
-	D2D1_BITMAP_PROPERTIES1 properties{};
-	properties.pixelFormat.alphaMode = D2D1_ALPHA_MODE_PREMULTIPLIED;
-	properties.pixelFormat.format = DXGI_FORMAT_B8G8R8A8_UNORM;
-	properties.bitmapOptions = D2D1_BITMAP_OPTIONS_TARGET | D2D1_BITMAP_OPTIONS_CANNOT_DRAW;
-	OK(this->d2dDeviceContext->CreateBitmapFromDxgiSurface(
-		this->dxgiSurface.Get(),
-		properties,
-		this->d2dBitmap.ReleaseAndGetAddressOf()));
-
-	return S_OK;
-}
-
-HRESULT TransparentWindow::ReleaseBitmap()
-{
-	this->d2dBitmap = nullptr;
-	return S_OK;
 }
 
 HRESULT TransparentWindow::CreateComposition()
@@ -363,7 +317,6 @@ HRESULT TransparentWindow::CreateComposition()
 
 HRESULT TransparentWindow::Destroy()
 {
-	this->d2dDeviceContext->SetTarget(nullptr);
 	return S_OK;
 }
 
@@ -393,12 +346,7 @@ LRESULT CALLBACK TransparentWindow::Message(HWND windowHandle, UINT message, WPA
 
 HRESULT TransparentWindow::Resize()
 {
-	// Unbind target and release bitmap and DXGI surface because they need to be recreated
-	this->d2dDeviceContext->SetTarget(nullptr);
-	OK(this->ReleaseBitmap());
-	OK(this->ReleaseSurface());
-
-	GetClientRect(this->window.get(), &this->size);
+	::GetClientRect(this->window.get(), &this->size);
 
 	// https://docs.microsoft.com/en-us/windows/win32/direct2d/direct2d-and-direct3d-interoperation-overview?redirectedfrom=MSDN#resizing-a-dxgi-surface-render-target
 	// Resize the swap chain
@@ -410,9 +358,6 @@ HRESULT TransparentWindow::Resize()
 		0);
 	OK(hr);
 
-	// Recreate the DXGI surface and bind the bitmap that we releasesd prior
-	OK(this->CreateSurface());
-	OK(this->CreateBitmap());
 	return S_OK;
 }
 
@@ -441,7 +386,7 @@ LRESULT TransparentWindow::FinishResizeMove()
 	*/
 }
 
-TransparentWindow3D::TransparentWindow3D
+TransparentWindow2D::TransparentWindow2D
 (
 	InstanceHandle instance,
 	std::wstring windowClassName,
@@ -452,9 +397,101 @@ TransparentWindow3D::TransparentWindow3D
 
 }
 
-HRESULT TransparentWindow3D::Create()
+HRESULT TransparentWindow2D::Create()
 {
 	OK(TransparentWindow::Create());
+
+	// Create the Direct2D device context that is the actual render target
+	// and exposes drawing commands
+	OK(this->d2dDevice->CreateDeviceContext(
+		D2D1_DEVICE_CONTEXT_OPTIONS_NONE,
+		this->d2dDeviceContext.ReleaseAndGetAddressOf()));
+
+	OK(this->CreateSurface());
+	OK(this->CreateBitmap());
+
+	return S_OK;
+}
+
+HRESULT TransparentWindow2D::Destroy()
+{
+	OK(TransparentWindow::Destroy());
+
+	this->d2dDeviceContext->SetTarget(nullptr);
+
+	return S_OK;
+}
+
+
+HRESULT TransparentWindow2D::CreateSurface()
+{
+	// Retrieve the swap chain's back buffer
+	OK(this->dxgiSwapChain->GetBuffer(
+		0,
+		__uuidof(this->dxgiSurface),
+		reinterpret_cast<void**>(this->dxgiSurface.ReleaseAndGetAddressOf())));
+
+	return S_OK;
+}
+
+HRESULT TransparentWindow2D::ReleaseSurface()
+{
+	this->dxgiSurface = nullptr;
+	return S_OK;
+}
+
+HRESULT TransparentWindow2D::CreateBitmap()
+{
+	// Create a Direct2D bitmap that points to the swap chain surface
+	D2D1_BITMAP_PROPERTIES1 properties{};
+	properties.pixelFormat.alphaMode = D2D1_ALPHA_MODE_PREMULTIPLIED;
+	properties.pixelFormat.format = DXGI_FORMAT_B8G8R8A8_UNORM;
+	properties.bitmapOptions = D2D1_BITMAP_OPTIONS_TARGET | D2D1_BITMAP_OPTIONS_CANNOT_DRAW;
+	OK(this->d2dDeviceContext->CreateBitmapFromDxgiSurface(
+		this->dxgiSurface.Get(),
+		properties,
+		this->d2dBitmap.ReleaseAndGetAddressOf()));
+
+	return S_OK;
+}
+
+HRESULT TransparentWindow2D::ReleaseBitmap()
+{
+	this->d2dBitmap = nullptr;
+	return S_OK;
+}
+
+HRESULT TransparentWindow2D::Resize()
+{
+	// Unbind target and release bitmap and DXGI surface because they need to be recreated
+	this->d2dDeviceContext->SetTarget(nullptr);
+	OK(this->ReleaseBitmap());
+	OK(this->ReleaseSurface());
+
+	// Invoke super
+	OK(TransparentWindow::Resize());
+
+	// Recreate the DXGI surface and bind the bitmap that we releasesd prior
+	OK(this->CreateSurface());
+	OK(this->CreateBitmap());
+
+	return S_OK;
+}
+
+TransparentWindow3D::TransparentWindow3D
+(
+	InstanceHandle instance,
+	std::wstring windowClassName,
+	std::wstring windowTitle
+)
+	: TransparentWindow2D(instance, windowClassName, windowTitle)
+{
+
+}
+
+HRESULT TransparentWindow3D::Create()
+{
+	OK(TransparentWindow2D::Create());
 
 	// https://docs.microsoft.com/en-us/windows/win32/direct2d/direct2d-and-direct3d-interoperation-overview
 	this->d3dDevice->GetImmediateContext(this->d3dDeviceContext.ReleaseAndGetAddressOf());
@@ -537,7 +574,7 @@ HRESULT TransparentWindow3D::Resize()
 {
 	OK(this->ReleaseRenderTarget());
 	OK(this->ReleaseDepthStencil());
-	OK(TransparentWindow::Resize());
+	OK(TransparentWindow2D::Resize());
 	OK(this->CreateRenderTarget());
 	OK(this->CreateDepthStencil());
 	return S_OK;

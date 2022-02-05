@@ -59,7 +59,7 @@ struct FFTWFComplex
 class FFTWFPlan
 {
 public:
-    FFTWFPlan() : created(false) {}
+    FFTWFPlan() : plan(), created(false) {}
 
     FFTWFPlan(fftwf_plan plan) : plan(plan), created(true) {}
 

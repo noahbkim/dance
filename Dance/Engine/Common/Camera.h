@@ -3,7 +3,7 @@
 #include "Framework.h"
 #include "Mathematics.h"
 #include "Engine/Common/Buffer.h"
-#include "Engine/D3D/Renderable.h"
+#include "Engine/Common/Renderable.h"
 
 class Camera
 {

@@ -57,17 +57,10 @@ protected:
     ComPtr<IDXGISwapChain1> dxgiSwapChain;
     ComPtr<ID2D1Factory2> d2dFactory;
     ComPtr<ID2D1Device1> d2dDevice;
-    ComPtr<ID2D1DeviceContext> d2dDeviceContext;
-    ComPtr<IDXGISurface2> dxgiSurface;
-    ComPtr<ID2D1Bitmap1> d2dBitmap;
     ComPtr<IDCompositionDevice> dCompositionDevice;
     ComPtr<IDCompositionTarget> dCompositionTarget;
     ComPtr<IDCompositionVisual> dCompositionVisual;
 
-    HRESULT CreateSurface();
-    HRESULT ReleaseSurface();
-    HRESULT CreateBitmap();
-    HRESULT ReleaseBitmap();
     HRESULT CreateComposition();
     virtual HRESULT Resize();
 
@@ -75,10 +68,31 @@ protected:
     virtual LRESULT StartResizeMove();
     virtual LRESULT FinishResizeMove();
 
-    RECT size;
+    RECT size{};
 };
 
-class TransparentWindow3D : public TransparentWindow
+class TransparentWindow2D : public TransparentWindow
+{
+public:
+    TransparentWindow2D(InstanceHandle instance, std::wstring windowClassName, std::wstring windowTitle);
+    virtual HRESULT Create();
+    virtual HRESULT Destroy();
+
+protected:
+    ComPtr<IDXGISurface2> dxgiSurface;
+    ComPtr<ID2D1Bitmap1> d2dBitmap;
+    ComPtr<ID2D1DeviceContext> d2dDeviceContext;
+
+    HRESULT CreateSurface();
+    HRESULT ReleaseSurface();
+    HRESULT CreateBitmap();
+    HRESULT ReleaseBitmap();
+    virtual HRESULT Resize();
+
+    bool is2DEnabled = false;
+};
+
+class TransparentWindow3D : public TransparentWindow2D
 {
 public:
     TransparentWindow3D(InstanceHandle instance, std::wstring windowClassName, std::wstring windowTitle);
@@ -97,4 +111,6 @@ protected:
     HRESULT CreateDepthStencil();
     HRESULT ReleaseDepthStencil();
     virtual HRESULT Resize();
+
+    bool is3DEnabled = false;
 };

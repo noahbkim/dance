@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Engine/D3D/Renderable.h"
+#include "Engine/Common/Renderable.h"
 #include "Common/Buffer.h"
 #include "Common/Primitive.h"
 #include "Mathematics.h"
