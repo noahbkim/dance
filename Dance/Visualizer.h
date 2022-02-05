@@ -3,17 +3,17 @@
 #include "Core/Window.h"
 #include "Core/Runtime.h"
 #include "Core/Audio.h"
-#include "Engine/Common/Primitive.h"
-#include "Engine/Common/Buffer.h"
-#include "Engine/Common/Shader.h"
-#include "Engine/Common/Camera.h"
-#include "Engine/Cube.h"
+#include "Common/Primitive.h"
+#include "Common/Buffer.h"
+#include "Common/Shader.h"
+#include "Common/Camera.h"
+#include "Visualizers/Cube.h"
 #include "FFTW3/fftw3.h"
 
-class Visualizer : public TransparentWindow3D, public Runtime
+class VisualizerWindow : public TransparentWindow3D, public Runtime
 {
 public:
-    Visualizer(InstanceHandle instance, std::wstring windowClassName, std::wstring windowTitle);
+    VisualizerWindow(InstanceHandle instance, std::wstring windowClassName, std::wstring windowTitle);
 
     virtual HRESULT Create();
     virtual LRESULT CALLBACK Message(HWND windowHandle, UINT message, WPARAM wParam, LPARAM lParam);

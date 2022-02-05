@@ -147,16 +147,18 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="Common\Buffer.h" />
+    <ClInclude Include="Common\Camera.h" />
     <ClInclude Include="Common\d3dx12.h" />
     <ClInclude Include="Common\Graphics.h" />
     <ClInclude Include="Common\Pointer.h" />
+    <ClInclude Include="Common\Primitive.h" />
+    <ClInclude Include="Common\Renderable.h" />
+    <ClInclude Include="Common\Shader.h" />
+    <ClInclude Include="Common\Shorthand.h" />
     <ClInclude Include="Core\Audio.h" />
     <ClInclude Include="Core\Runtime.h" />
     <ClInclude Include="Core\Window.h" />
-    <ClInclude Include="Engine\Common\Buffer.h" />
-    <ClInclude Include="Engine\Common\Shader.h" />
-    <ClInclude Include="Engine\Common\Primitive.h" />
-    <ClInclude Include="Engine\Cube.h" />
     <ClInclude Include="Engine\D3D\Camera.h" />
     <ClInclude Include="Engine\D3D\Renderable.h" />
     <ClInclude Include="Framework.h" />
@@ -171,6 +173,8 @@
     <ClInclude Include="Resource.h" />
     <ClInclude Include="TargetVersion.h" />
     <ClInclude Include="Visualizer.h" />
+    <ClInclude Include="Visualizers\Bars.h" />
+    <ClInclude Include="Visualizers\Cube.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Core\Audio.cpp" />

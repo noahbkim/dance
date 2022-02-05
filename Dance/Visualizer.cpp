@@ -1,5 +1,5 @@
 #include "Visualizer.h"
-#include "Engine/Common/Camera.h"
+#include "Common/Camera.h"
 #include "Mathematics.h"
 #include "FFTW3/fftw3.h"
 
@@ -7,7 +7,7 @@
 
 static const int MENU_EXIT = 42;
 
-Visualizer::Visualizer
+VisualizerWindow::VisualizerWindow
 (
 	InstanceHandle instance,
 	std::wstring windowClassName,
@@ -19,7 +19,7 @@ Visualizer::Visualizer
 
 }
 
-HRESULT Visualizer::Create()
+HRESULT VisualizerWindow::Create()
 {
 	ComPtr<IMMDevice> device = getDefaultDevice();
 	TRACE("capturing " << getDeviceFriendlyName(device.Get()));
@@ -50,7 +50,7 @@ HRESULT Visualizer::Create()
 	return S_OK;
 }
 
-HRESULT Visualizer::Resize()
+HRESULT VisualizerWindow::Resize()
 {
 	OK(TransparentWindow3D::Resize());
 
@@ -77,7 +77,7 @@ HRESULT Visualizer::Resize()
 	return S_OK;
 }
 
-LRESULT CALLBACK Visualizer::Message(HWND windowHandle, UINT message, WPARAM wParam, LPARAM lParam)
+LRESULT CALLBACK VisualizerWindow::Message(HWND windowHandle, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	switch (message)
 	{
@@ -112,7 +112,7 @@ LRESULT CALLBACK Visualizer::Message(HWND windowHandle, UINT message, WPARAM wPa
 	}
 }
 
-inline void Visualizer::RenderBorder()
+inline void VisualizerWindow::RenderBorder()
 {
 	auto context = this->d2dDeviceContext;
 
@@ -134,7 +134,7 @@ inline void Visualizer::RenderBorder()
 	context->FillRectangle(stroke, brush.Get());
 }
 
-LRESULT Visualizer::Render()
+LRESULT VisualizerWindow::Render()
 {
 	// Set target, begin, clear
 	auto context = this->d2dDeviceContext;
@@ -203,7 +203,7 @@ LRESULT Visualizer::Render()
 	return 0;
 }
 
-void Visualizer::Update(double delta)
+void VisualizerWindow::Update(double delta)
 {
 	if (this->analyzer.Listen())
 	{
@@ -217,7 +217,7 @@ void Visualizer::Update(double delta)
 		* Matrix4F::ZRotation(0.85f * this->theta);
 }
 
-LRESULT Visualizer::MouseMove(WPARAM wParam, LPARAM lParam)
+LRESULT VisualizerWindow::MouseMove(WPARAM wParam, LPARAM lParam)
 {
 	this->mouseHovering = true;
 	if (!this->mouseTracking)
@@ -233,20 +233,20 @@ LRESULT Visualizer::MouseMove(WPARAM wParam, LPARAM lParam)
 	return 0;
 }
 
-LRESULT Visualizer::MouseHover(WPARAM wParam, LPARAM lParam)
+LRESULT VisualizerWindow::MouseHover(WPARAM wParam, LPARAM lParam)
 {
 	this->mouseHovering = true;
 	return 0;
 }
 
-LRESULT Visualizer::MouseLeave(WPARAM wParam, LPARAM lParam)
+LRESULT VisualizerWindow::MouseLeave(WPARAM wParam, LPARAM lParam)
 {
 	this->mouseHovering = false;
 	this->mouseTracking = false;
 	return 0;
 }
 
-LRESULT Visualizer::RightButtonDown(WPARAM wParam, LPARAM lParam)
+LRESULT VisualizerWindow::RightButtonDown(WPARAM wParam, LPARAM lParam)
 {
 	HMENU hPopupMenu = ::CreatePopupMenu();
 	BET(InsertMenu(hPopupMenu, 0, MF_BYPOSITION | MF_STRING, MENU_EXIT, L"Exit"));
@@ -262,7 +262,7 @@ LRESULT Visualizer::RightButtonDown(WPARAM wParam, LPARAM lParam)
 		NULL));
 }
 
-LRESULT Visualizer::Command(WPARAM wParam, LPARAM lParam)
+LRESULT VisualizerWindow::Command(WPARAM wParam, LPARAM lParam)
 {
 	// If from menu
 	if (HIWORD(wParam) == 0)
@@ -278,7 +278,7 @@ LRESULT Visualizer::Command(WPARAM wParam, LPARAM lParam)
 	return 0;
 }
 
-LRESULT Visualizer::Close()
+LRESULT VisualizerWindow::Close()
 {
 	this->analyzer.Disable();
 	this->Destroy();

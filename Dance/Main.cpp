@@ -27,7 +27,7 @@ int APIENTRY wWinMain(
         return result;
     }
 
-    Visualizer visualizer(instance, L"VisualizerWindow", L"Dance");
+    VisualizerWindow visualizer(instance, L"VisualizerWindow", L"Dance");
     OK(visualizer.Create());
     OK(visualizer.Position(100, 100, 480, 480, SWP_FRAMECHANGED));
     OK(visualizer.Prepare(showCommand));

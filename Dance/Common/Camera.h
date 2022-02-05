@@ -2,8 +2,8 @@
 
 #include "Framework.h"
 #include "Mathematics.h"
-#include "Engine/Common/Buffer.h"
-#include "Engine/Common/Renderable.h"
+#include "Common/Buffer.h"
+#include "Common/Renderable.h"
 
 class Camera
 {

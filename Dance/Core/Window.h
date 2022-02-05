@@ -3,8 +3,6 @@
 #include "Framework.h"
 #include "Common/Pointer.h"
 
-#include <vector>
-
 class Window
 {
 public:
@@ -88,8 +86,6 @@ protected:
     HRESULT CreateBitmap();
     HRESULT ReleaseBitmap();
     virtual HRESULT Resize();
-
-    bool is2DEnabled = false;
 };
 
 class TransparentWindow3D : public TransparentWindow2D
@@ -111,6 +107,4 @@ protected:
     HRESULT CreateDepthStencil();
     HRESULT ReleaseDepthStencil();
     virtual HRESULT Resize();
-
-    bool is3DEnabled = false;
 };
