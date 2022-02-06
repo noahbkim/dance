@@ -55,6 +55,19 @@ struct FFTWFComplex
 {
     float real;
     float imaginary;
+
+    float magnitude() const
+    {
+        return std::sqrtf(this->real * this->real + this->imaginary * this->imaginary);
+    }
+
+    template<typename T>
+    float magnitude(T normalize) const
+    {
+        float real = this->real / normalize;
+        float imaginary = this->imaginary / normalize;
+        return std::sqrtf(real * real + imaginary * imaginary);
+    }
 };
 
 class FFTWFPlan

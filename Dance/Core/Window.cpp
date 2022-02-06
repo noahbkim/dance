@@ -4,6 +4,9 @@
 #include "Mathematics.h"
 #include "Visualizers/Bars.h"
 
+#include <dwmapi.h>
+#pragma comment(lib, "dwmapi.lib")
+
 Window::Window
 (
 	HINSTANCE instance,
@@ -480,6 +483,10 @@ void VisualizerWindow::Update(double delta)
 LRESULT VisualizerWindow::MouseMove(WPARAM wParam, LPARAM lParam)
 {
 	this->isMouseHovering = true;
+
+	static const MARGINS shadow_state{ 1, 1, 1, 1 };
+	OK(::DwmExtendFrameIntoClientArea(this->window, &shadow_state));
+
 	if (!this->isMouseTracking)
 	{
 		TRACKMOUSEEVENT tracking{};
@@ -496,6 +503,10 @@ LRESULT VisualizerWindow::MouseMove(WPARAM wParam, LPARAM lParam)
 LRESULT VisualizerWindow::MouseHover(WPARAM wParam, LPARAM lParam)
 {
 	this->isMouseHovering = true;
+
+	static const MARGINS shadow_state{ 1, 1, 1, 1 };
+	OK(::DwmExtendFrameIntoClientArea(this->window, &shadow_state));
+
 	return 0;
 }
 
@@ -503,6 +514,10 @@ LRESULT VisualizerWindow::MouseLeave(WPARAM wParam, LPARAM lParam)
 {
 	this->isMouseHovering = false;
 	this->isMouseTracking = false;
+
+	static const MARGINS shadow_state{ 0, 0, 0, 0 };
+	OK(::DwmExtendFrameIntoClientArea(this->window, &shadow_state));
+
 	return 0;
 }
 

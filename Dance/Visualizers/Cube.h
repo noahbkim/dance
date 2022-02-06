@@ -69,16 +69,43 @@ public:
 class CubeVisualizer : ThreeVisualizer, AudioVisualizer
 {
 public:
+	CubeVisualizer() : size{} {}
+
 	virtual HRESULT Create(const Visualizer::Dependencies& dependencies)
 	{
+		OK(ThreeVisualizer::Create(dependencies));
+		OK(AudioVisualizer::Create(dependencies));
+
 		this->d3dDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 		this->cube = Cube(this->d3dDevice);
 		this->camera = Camera(this->d3dDevice, Matrix4F(), Matrix4F());
 		this->theta = 0.0f;
+
+		return S_OK;
+	}
+
+	virtual HRESULT Unsize()
+	{
+		OK(ThreeVisualizer::Unsize());
+		return S_OK;
+	}
+
+	virtual HRESULT Resize(const RECT& size)
+	{
+		this->size = size;
+		OK(ThreeVisualizer::Resize(size));
+		OK(this->SetViewport(size));
+		OK(this->SetProjection(size));
+		return S_OK;
 	}
 
 	virtual void Render()
 	{
+		const float color[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+		this->d3dDeviceContext->ClearRenderTargetView(
+			this->d3dBackBufferView.Get(), 
+			color);
+
 		this->d3dDeviceContext->ClearDepthStencilView(
 			this->d3dDepthStencilView.Get(),
 			D3D11_CLEAR_DEPTH,
@@ -96,14 +123,29 @@ public:
 
 	virtual void Update(float delta)
 	{
+		AudioVisualizer::Update(delta);
+
+		FLOAT level = 0.0f;
+		for (size_t i = 100; i < 600; ++i)
+		{
+			level += this->spectrum[i].magnitude(this->spectrum.size());
+		}
+
 		this->theta += delta;
-		this->cube.Transform() = Matrix4F::Scale(200.0f)
+		this->cube.Transform() = Matrix4F::Scale(40 * std::logf(level / 100))
 			* Matrix4F::YRotation(this->theta)
 			* Matrix4F::XRotation(0.45f * this->theta)
 			* Matrix4F::ZRotation(0.85f * this->theta);
 	}
 
+	virtual HRESULT Destroy()
+	{
+		OK(AudioVisualizer::Destroy());
+		return S_OK;
+	}
+
 protected:
+	RECT size;
 	Cube cube;
 	Camera camera;
 	float theta;
@@ -120,6 +162,7 @@ protected:
 			1.0f
 		};
 		this->d3dDeviceContext->RSSetViewports(1, &viewport);
+		return S_OK;
 	}
 
 	virtual HRESULT SetProjection(const RECT& size)
@@ -133,5 +176,6 @@ protected:
 				25.0f,
 				10000.0f);
 		this->camera.WorldToCamera = Matrix4F::Translation(Vector3(500.0f, 0.0f, 0.0f));
+		return S_OK;
 	}
 };

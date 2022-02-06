@@ -5,26 +5,6 @@ Visualizer::~Visualizer()
 
 }
 
-void Visualizer::Border(ComPtr<ID2D1DeviceContext> context, const RECT& size)
-{
-	ComPtr<ID2D1SolidColorBrush> brush;
-	D2D1_COLOR_F const color = D2D1::ColorF(1.0f, 1.0f, 1.0f, 0.5f);
-	context->CreateSolidColorBrush(color, brush.GetAddressOf());
-
-	static const FLOAT THICKNESS = 2.0f;
-	const FLOAT w = size.right - size.left;
-	const FLOAT h = size.bottom - size.top;
-
-	D2D1_RECT_F stroke{ 0, 0, w, THICKNESS };
-	context->FillRectangle(stroke, brush.Get());
-	stroke = { 0, h - THICKNESS, w, h };
-	context->FillRectangle(stroke, brush.Get());
-	stroke = { 0, THICKNESS, THICKNESS, h - THICKNESS };
-	context->FillRectangle(stroke, brush.Get());
-	stroke = { w - THICKNESS, THICKNESS, w, h - THICKNESS };
-	context->FillRectangle(stroke, brush.Get());
-}
-
 HRESULT AudioVisualizer::Create(const Visualizer::Dependencies& dependencies)
 {
     ComPtr<IMMDevice> device = getDefaultDevice();
@@ -126,6 +106,9 @@ HRESULT TwoVisualizer::Resize(const RECT& size)
 
 HRESULT ThreeVisualizer::Create(const Dependencies& dependencies)
 {
+	this->dxgiSwapChain = dependencies.DxgiSwapChain;
+	this->d3dDevice = dependencies.D3dDevice;
+
 	// https://docs.microsoft.com/en-us/windows/win32/direct2d/direct2d-and-direct3d-interoperation-overview
 	this->d3dDevice->GetImmediateContext(this->d3dDeviceContext.ReleaseAndGetAddressOf());
 

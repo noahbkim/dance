@@ -37,9 +37,6 @@ public:
 
     // Release all associated resources
     virtual HRESULT Destroy() = 0;
-
-    // Some extra stuff
-    static inline void Border(ComPtr<ID2D1DeviceContext> context, const RECT& size);
 };
 
 class AudioVisualizer : public virtual Visualizer
