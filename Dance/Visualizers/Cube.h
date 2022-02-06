@@ -4,6 +4,7 @@
 #include "Common/Buffer.h"
 #include "Common/Primitive.h"
 #include "Mathematics.h"
+#include "Visualizer.h"
 
 const static Vertex VERTICES[] = {
 	{ Vector3F(-0.5f, -0.5f, -0.5f), Vector3F(0, 0, -1.0f), Color4F(0.0f, 1.0f, 1.0f, 1.0f), { 0.0f, 0.0f } },
@@ -62,5 +63,75 @@ public:
 	{
 		this->vertices = IndexedVertexBuffer(device, lengthof(VERTICES), VERTICES, lengthof(INDICES), INDICES);
 		this->shader = Shader(device, L"Shader/Mesh.hlsl", LAYOUT, lengthof(LAYOUT));
+	}
+};
+
+class CubeVisualizer : ThreeVisualizer, AudioVisualizer
+{
+public:
+	virtual HRESULT Create(const Visualizer::Dependencies& dependencies)
+	{
+		this->d3dDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		this->cube = Cube(this->d3dDevice);
+		this->camera = Camera(this->d3dDevice, Matrix4F(), Matrix4F());
+		this->theta = 0.0f;
+	}
+
+	virtual void Render()
+	{
+		this->d3dDeviceContext->ClearDepthStencilView(
+			this->d3dDepthStencilView.Get(),
+			D3D11_CLEAR_DEPTH,
+			1.0f,
+			0);
+		this->d3dDeviceContext->OMSetRenderTargets(
+			1,
+			this->d3dBackBufferView.GetAddressOf(),
+			this->d3dDepthStencilView.Get());
+
+		this->camera.Activate();
+		this->cube.Render();
+		this->dxgiSwapChain->Present(1, 0);
+	}
+
+	virtual void Update(float delta)
+	{
+		this->theta += delta;
+		this->cube.Transform() = Matrix4F::Scale(200.0f)
+			* Matrix4F::YRotation(this->theta)
+			* Matrix4F::XRotation(0.45f * this->theta)
+			* Matrix4F::ZRotation(0.85f * this->theta);
+	}
+
+protected:
+	Cube cube;
+	Camera camera;
+	float theta;
+
+	virtual HRESULT SetViewport(const RECT& size)
+	{
+		D3D11_VIEWPORT viewport
+		{
+			0.0f,
+			0.0f,
+			(FLOAT)(size.right - size.left),
+			(FLOAT)(size.bottom - size.top),
+			0.0f,
+			1.0f
+		};
+		this->d3dDeviceContext->RSSetViewports(1, &viewport);
+	}
+
+	virtual HRESULT SetProjection(const RECT& size)
+	{
+		this->camera.Projection = Matrix4F::YRotation(-Geometry::PiOver2)
+			* Matrix4F::ZRotation(-Geometry::PiOver2)
+			* Matrix4F::Perspective(
+				Geometry::ToRadians(70.0f),
+				(FLOAT)(size.right - size.left),
+				(FLOAT)(size.bottom - size.top),
+				25.0f,
+				10000.0f);
+		this->camera.WorldToCamera = Matrix4F::Translation(Vector3(500.0f, 0.0f, 0.0f));
 	}
 };

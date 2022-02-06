@@ -3,21 +3,32 @@
 #include "Framework.h"
 #include "Common/Pointer.h"
 
+#include "Core/Window.h"
+#include "Core/Runtime.h"
+#include "Core/Audio.h"
+#include "Common/Primitive.h"
+#include "Common/Buffer.h"
+#include "Common/Shader.h"
+#include "Common/Camera.h"
+#include "Visualizers/Bars.h"
+#include "Visualizers/Cube.h"
+
 class Window
 {
 public:
-    Window(InstanceHandle instance, std::wstring windowClassName, std::wstring windowTitle);
+    Window(HINSTANCE instance, std::wstring windowClassName, std::wstring windowTitle);
     virtual ~Window();
     virtual HRESULT Create();
     virtual HRESULT Prepare(int showCommand);
     virtual HRESULT Position(int x, int y, int width, int height, UINT flags);
     virtual LRESULT CALLBACK Message(HWND windowHandle, UINT message, WPARAM wParam, LPARAM lParam);
+    virtual HRESULT Destroy();
 
     static LRESULT CALLBACK Dispatch(HWND windowHandle, UINT message, WPARAM wParam, LPARAM lParam, UINT_PTR subclass, DWORD_PTR owner);
 
 protected:
-    InstanceHandle instance;
-    WindowHandle window;
+    HINSTANCE instance;
+    HWND window;
     std::wstring windowClassName;
     std::wstring windowTitle;
     DWORD windowExtensionStyle = WS_EX_OVERLAPPEDWINDOW;
@@ -46,7 +57,6 @@ public:
     virtual HRESULT Create();
     virtual HRESULT Position(int x, int y, int width, int height, UINT flags);
     virtual LRESULT CALLBACK Message(HWND windowHandle, UINT message, WPARAM wParam, LPARAM lParam);
-    virtual HRESULT Destroy();
 
 protected:
     ComPtr<ID3D11Device> d3dDevice;
@@ -69,42 +79,35 @@ protected:
     RECT size{};
 };
 
-class TransparentWindow2D : public TransparentWindow
+class VisualizerWindow : public TransparentWindow, public Runtime
 {
 public:
-    TransparentWindow2D(InstanceHandle instance, std::wstring windowClassName, std::wstring windowTitle);
+    VisualizerWindow(InstanceHandle instance, std::wstring windowClassName, std::wstring windowTitle);
+
+    virtual Visualizer::Dependencies Dependencies() const;
+
     virtual HRESULT Create();
-    virtual HRESULT Destroy();
+    virtual LRESULT CALLBACK Message(HWND windowHandle, UINT message, WPARAM wParam, LPARAM lParam);
+
+    void Render();
+    void Update(double delta);
+
+    LRESULT MouseMove(WPARAM wParam, LPARAM lParam);
+    LRESULT MouseHover(WPARAM wParam, LPARAM lParam);
+    LRESULT MouseLeave(WPARAM wParam, LPARAM lParam);
+    LRESULT RightButtonDown(WPARAM wParam, LPARAM lParam);
+    LRESULT Command(WPARAM wParam, LPARAM lParam);
+
+    LRESULT Close();
 
 protected:
-    ComPtr<IDXGISurface2> dxgiSurface;
-    ComPtr<ID2D1Bitmap1> d2dBitmap;
-    ComPtr<ID2D1DeviceContext> d2dDeviceContext;
-
-    HRESULT CreateSurface();
-    HRESULT ReleaseSurface();
-    HRESULT CreateBitmap();
-    HRESULT ReleaseBitmap();
     virtual HRESULT Resize();
-};
 
-class TransparentWindow3D : public TransparentWindow2D
-{
-public:
-    TransparentWindow3D(InstanceHandle instance, std::wstring windowClassName, std::wstring windowTitle);
-    virtual HRESULT Create();
+private:
+    bool isMouseHovering = false;
+    bool isMouseTracking = false;
 
-protected:
-    ComPtr<ID3D11DeviceContext> d3dDeviceContext;
-    ComPtr<ID3D11RenderTargetView> d3dBackBufferView;
-    ComPtr<ID3D11RenderTargetView> d3dRenderTargetView;
-    ComPtr<ID3D11DepthStencilView> d3dDepthStencilView;
-    ComPtr<ID3D11Texture2D> d3dDepthTexture;
-    ComPtr<ID3D11SamplerState> d3dSamplerState;
+    std::unique_ptr<BarsVisualizer> visualizer;
 
-    HRESULT CreateRenderTarget();
-    HRESULT ReleaseRenderTarget();
-    HRESULT CreateDepthStencil();
-    HRESULT ReleaseDepthStencil();
-    virtual HRESULT Resize();
+    void RenderBorder();
 };

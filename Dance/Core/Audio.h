@@ -9,6 +9,7 @@
 #include <vector>
 
 #pragma comment(lib, "Winmm.lib")
+#pragma comment(lib, "FFTW3/libfftw3f-3.lib")
 
 // A REFERENCE_TIME increment is 100 nanoseconds
 #define ONE_SECOND (1e9 / 1e2)

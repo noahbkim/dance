@@ -1,9 +1,12 @@
 #include "Window.h"
 #include "Common/Graphics.h"
+#include "Common/Camera.h"
+#include "Mathematics.h"
+#include "Visualizers/Bars.h"
 
 Window::Window
 (
-	InstanceHandle instance,
+	HINSTANCE instance,
 	std::wstring windowClassName,
 	std::wstring windowTitle
 ) 
@@ -17,7 +20,6 @@ Window::Window
 
 Window::~Window()
 {
-	
 }
 
 HRESULT Window::Create()
@@ -25,7 +27,7 @@ HRESULT Window::Create()
 	OK(this->Register());
 
 	// https://docs.microsoft.com/en-us/windows/win32/learnwin32/creating-a-window
-	this->window = WindowHandle(::CreateWindowExW(
+	this->window = ::CreateWindowExW(
 		this->windowExtensionStyle,
 		this->windowClassName.c_str(),
 		this->windowTitle.c_str(),
@@ -37,7 +39,7 @@ HRESULT Window::Create()
 		nullptr,
 		nullptr,
 		this->instance,
-		nullptr));
+		nullptr);
 
 	if (!this->window)
 	{
@@ -48,7 +50,7 @@ HRESULT Window::Create()
 	// Attach a reference to the wrapper using USERDATA
 	// https://stackoverflow.com/questions/117792/best-method-for-storing-this-pointer-for-use-in-wndproc
 	// https://docs.microsoft.com/en-us/windows/win32/winmsg/about-window-procedures
-	BET(::SetWindowSubclass(this->window.get(), Window::Dispatch, 0, reinterpret_cast<DWORD_PTR>(this)));
+	BET(::SetWindowSubclass(this->window, Window::Dispatch, 0, reinterpret_cast<DWORD_PTR>(this)));
 
 	return S_OK;
 }
@@ -56,8 +58,8 @@ HRESULT Window::Create()
 HRESULT Window::Prepare(int showCommand)
 {
 	// Show and update
-	::ShowWindow(this->window.get(), showCommand);
-	BET(::UpdateWindow(this->window.get()));
+	::ShowWindow(this->window, showCommand);
+	BET(::UpdateWindow(this->window));
 
 	return S_OK;
 }
@@ -65,7 +67,7 @@ HRESULT Window::Prepare(int showCommand)
 HRESULT Window::Position(int x, int y, int width, int height, UINT flags)
 {
 	BET(::SetWindowPos(
-		this->window.get(),
+		this->window,
 		nullptr,
 		x,
 		y,
@@ -109,6 +111,12 @@ LRESULT CALLBACK Window::Dispatch(HWND windowHandle, UINT message, WPARAM wParam
 	// https://stackoverflow.com/questions/35178779/wndproc-as-class-method
 	Window* self = reinterpret_cast<Window*>(owner);
 	return self->Message(windowHandle, message, wParam, lParam);
+}
+
+HRESULT Window::Destroy()
+{
+	::DestroyWindow(this->window);
+	return S_OK;
 }
 
 bool isMaximized(HWND window)
@@ -155,7 +163,7 @@ HRESULT BorderlessWindow::Create()
 	OK(Window::Create());
 
 	// Redraw the frame so the safe area is recalculated
-	BET(::SetWindowPos(this->window.get(), nullptr, 0, 0, 0, 0, SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE));
+	BET(::SetWindowPos(this->window, nullptr, 0, 0, 0, 0, SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE));
 
 	return S_OK;
 }
@@ -192,7 +200,7 @@ LRESULT BorderlessWindow::HitTest(LPARAM lParam)
 	};
 
 	RECT rectangle;
-	BET(::GetWindowRect(this->window.get(), &rectangle));
+	BET(::GetWindowRect(this->window, &rectangle));
 
 	LONG x = GET_X_LPARAM(lParam);
 	LONG y = GET_Y_LPARAM(lParam);
@@ -223,7 +231,7 @@ LRESULT BorderlessWindow::CalculateSize(WPARAM wParam, LPARAM lParam)
 	if (wParam == TRUE)
 	{
 		NCCALCSIZE_PARAMS* params = reinterpret_cast<NCCALCSIZE_PARAMS*>(lParam);
-		adjustMaximizedClientRectangle(this->window.get(), params->rgrc[0]);
+		adjustMaximizedClientRectangle(this->window, params->rgrc[0]);
 	}
 	return 0;
 }
@@ -263,7 +271,7 @@ HRESULT TransparentWindow::Create()
 		__uuidof(this->dxgiFactory),
 		reinterpret_cast<void**>(this->dxgiFactory.ReleaseAndGetAddressOf())));
 
-	::GetClientRect(this->window.get(), &this->size);
+	::GetClientRect(this->window, &this->size);
 
 	DXGI_SWAP_CHAIN_DESC1 swapChainDescription{};
 	swapChainDescription.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
@@ -303,7 +311,7 @@ HRESULT TransparentWindow::CreateComposition()
 		__uuidof(this->dCompositionDevice),
 		reinterpret_cast<void**>(this->dCompositionDevice.ReleaseAndGetAddressOf())));
 	OK(this->dCompositionDevice->CreateTargetForHwnd(
-		this->window.get(),
+		this->window,
 		true, // Top most
 		this->dCompositionTarget.ReleaseAndGetAddressOf()));
 	OK(this->dCompositionDevice->CreateVisual(this->dCompositionVisual.ReleaseAndGetAddressOf()));
@@ -312,11 +320,6 @@ HRESULT TransparentWindow::CreateComposition()
 	OK(this->dCompositionTarget->SetRoot(this->dCompositionVisual.Get()));
 	OK(this->dCompositionDevice->Commit());
 
-	return S_OK;
-}
-
-HRESULT TransparentWindow::Destroy()
-{
 	return S_OK;
 }
 
@@ -346,7 +349,7 @@ LRESULT CALLBACK TransparentWindow::Message(HWND windowHandle, UINT message, WPA
 
 HRESULT TransparentWindow::Resize()
 {
-	::GetClientRect(this->window.get(), &this->size);
+	::GetClientRect(this->window, &this->size);
 
 	// https://docs.microsoft.com/en-us/windows/win32/direct2d/direct2d-and-direct3d-interoperation-overview?redirectedfrom=MSDN#resizing-a-dxgi-surface-render-target
 	// Resize the swap chain
@@ -386,196 +389,159 @@ LRESULT TransparentWindow::FinishResizeMove()
 	*/
 }
 
-TransparentWindow2D::TransparentWindow2D
+static const int MENU_EXIT = 42;
+
+VisualizerWindow::VisualizerWindow
 (
 	InstanceHandle instance,
 	std::wstring windowClassName,
 	std::wstring windowTitle
 )
 	: TransparentWindow(instance, windowClassName, windowTitle)
+	, Runtime()
 {
 
 }
 
-HRESULT TransparentWindow2D::Create()
+Visualizer::Dependencies VisualizerWindow::Dependencies() const
 {
-	OK(TransparentWindow::Create());
+    return {
+        this->instance,
+        this->window,
+        this->d3dDevice,
+        this->dxgiDevice,
+        this->dxgiSwapChain,
+        this->d2dDevice
+    };
+}
 
-	// Create the Direct2D device context that is the actual render target
-	// and exposes drawing commands
-	OK(this->d2dDevice->CreateDeviceContext(
-		D2D1_DEVICE_CONTEXT_OPTIONS_NONE,
-		this->d2dDeviceContext.ReleaseAndGetAddressOf()));
-
-	OK(this->CreateSurface());
-	OK(this->CreateBitmap());
-
+HRESULT VisualizerWindow::Create()
+{
+	TransparentWindow::Create();
+	this->visualizer = std::make_unique<BarsVisualizer>();
+	this->visualizer->Create(this->Dependencies());
 	return S_OK;
 }
 
-HRESULT TransparentWindow2D::Destroy()
+HRESULT VisualizerWindow::Resize()
 {
-	OK(TransparentWindow::Destroy());
-
-	this->d2dDeviceContext->SetTarget(nullptr);
-
-	return S_OK;
-}
-
-
-HRESULT TransparentWindow2D::CreateSurface()
-{
-	// Retrieve the swap chain's back buffer
-	OK(this->dxgiSwapChain->GetBuffer(
-		0,
-		__uuidof(this->dxgiSurface),
-		reinterpret_cast<void**>(this->dxgiSurface.ReleaseAndGetAddressOf())));
-
-	return S_OK;
-}
-
-HRESULT TransparentWindow2D::ReleaseSurface()
-{
-	this->dxgiSurface = nullptr;
-	return S_OK;
-}
-
-HRESULT TransparentWindow2D::CreateBitmap()
-{
-	// Create a Direct2D bitmap that points to the swap chain surface
-	D2D1_BITMAP_PROPERTIES1 properties{};
-	properties.pixelFormat.alphaMode = D2D1_ALPHA_MODE_PREMULTIPLIED;
-	properties.pixelFormat.format = DXGI_FORMAT_B8G8R8A8_UNORM;
-	properties.bitmapOptions = D2D1_BITMAP_OPTIONS_TARGET | D2D1_BITMAP_OPTIONS_CANNOT_DRAW;
-	OK(this->d2dDeviceContext->CreateBitmapFromDxgiSurface(
-		this->dxgiSurface.Get(),
-		properties,
-		this->d2dBitmap.ReleaseAndGetAddressOf()));
-
-	return S_OK;
-}
-
-HRESULT TransparentWindow2D::ReleaseBitmap()
-{
-	this->d2dBitmap = nullptr;
-	return S_OK;
-}
-
-HRESULT TransparentWindow2D::Resize()
-{
-	// Unbind target and release bitmap and DXGI surface because they need to be recreated
-	this->d2dDeviceContext->SetTarget(nullptr);
-	OK(this->ReleaseBitmap());
-	OK(this->ReleaseSurface());
-
-	// Invoke super
+	OK(this->visualizer->Unsize());
 	OK(TransparentWindow::Resize());
-
-	// Recreate the DXGI surface and bind the bitmap that we releasesd prior
-	OK(this->CreateSurface());
-	OK(this->CreateBitmap());
-
+	OK(this->visualizer->Resize(this->size));
 	return S_OK;
 }
 
-TransparentWindow3D::TransparentWindow3D
-(
-	InstanceHandle instance,
-	std::wstring windowClassName,
-	std::wstring windowTitle
-)
-	: TransparentWindow2D(instance, windowClassName, windowTitle)
+LRESULT CALLBACK VisualizerWindow::Message(HWND windowHandle, UINT message, WPARAM wParam, LPARAM lParam)
 {
-
+	switch (message)
+	{
+	case WM_NCCALCSIZE:
+		return this->CalculateSize(wParam, lParam);
+	case WM_NCHITTEST:
+		return this->HitTest(lParam);
+	case WM_ENTERSIZEMOVE:
+		return this->StartResizeMove();
+	case WM_EXITSIZEMOVE:
+		return this->FinishResizeMove();
+	case WM_MOUSEHOVER:
+	case WM_NCMOUSEHOVER:
+		return this->MouseHover(wParam, lParam);
+	case WM_MOUSELEAVE:
+	case WM_NCMOUSELEAVE:
+		return this->MouseLeave(wParam, lParam);
+	case WM_MOUSEMOVE:
+	case WM_NCMOUSEMOVE:
+		return this->MouseMove(wParam, lParam);
+	case WM_RBUTTONDOWN:
+	case WM_NCRBUTTONDOWN:
+		return this->RightButtonDown(wParam, lParam);
+	case WM_COMMAND:
+		return this->Command(wParam, lParam);
+	case WM_PAINT:
+		this->Render();
+		return 0;
+	case WM_DESTROY:
+		return this->Close();
+	default:
+		return ::DefWindowProcW(windowHandle, message, wParam, lParam);
+	}
 }
 
-HRESULT TransparentWindow3D::Create()
+void VisualizerWindow::Render()
 {
-	OK(TransparentWindow2D::Create());
-
-	// https://docs.microsoft.com/en-us/windows/win32/direct2d/direct2d-and-direct3d-interoperation-overview
-	this->d3dDevice->GetImmediateContext(this->d3dDeviceContext.ReleaseAndGetAddressOf());
-
-	// Create depth stencil state
-	D3D11_DEPTH_STENCIL_DESC descriptor{};
-	descriptor.DepthEnable = true;
-	descriptor.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
-	descriptor.DepthFunc = D3D11_COMPARISON_LESS;
-	descriptor.StencilEnable = false;
-	ComPtr<ID3D11DepthStencilState> depthStencilState;
-	OK(this->d3dDevice->CreateDepthStencilState(&descriptor, depthStencilState.ReleaseAndGetAddressOf()));
-	this->d3dDeviceContext->OMSetDepthStencilState(depthStencilState.Get(), 0);
-
-	OK(this->CreateRenderTarget());
-	OK(this->CreateDepthStencil());
-	return S_OK;
+	this->visualizer->Render();
 }
 
-HRESULT TransparentWindow3D::CreateRenderTarget()
+void VisualizerWindow::Update(double delta)
 {
-	// Build the backbuffer
-	ComPtr<ID3D11Texture2D> backBufferTexture;
-	OK(this->dxgiSwapChain->GetBuffer(
+	this->visualizer->Update(delta);
+}
+
+LRESULT VisualizerWindow::MouseMove(WPARAM wParam, LPARAM lParam)
+{
+	this->isMouseHovering = true;
+	if (!this->isMouseTracking)
+	{
+		TRACKMOUSEEVENT tracking{};
+		tracking.cbSize = sizeof(tracking);
+		tracking.dwFlags = TME_NONCLIENT | TME_LEAVE;
+		tracking.hwndTrack = this->window;
+		tracking.dwHoverTime = HOVER_DEFAULT;
+		TrackMouseEvent(&tracking);
+		this->isMouseTracking = true;
+	}
+	return 0;
+}
+
+LRESULT VisualizerWindow::MouseHover(WPARAM wParam, LPARAM lParam)
+{
+	this->isMouseHovering = true;
+	return 0;
+}
+
+LRESULT VisualizerWindow::MouseLeave(WPARAM wParam, LPARAM lParam)
+{
+	this->isMouseHovering = false;
+	this->isMouseTracking = false;
+	return 0;
+}
+
+LRESULT VisualizerWindow::RightButtonDown(WPARAM wParam, LPARAM lParam)
+{
+	HMENU hPopupMenu = ::CreatePopupMenu();
+	BET(InsertMenu(hPopupMenu, 0, MF_BYPOSITION | MF_STRING, MENU_EXIT, L"Exit"));
+	BET(::SetForegroundWindow(this->window));
+	POINT point{ LOWORD(lParam), HIWORD(lParam) };
+	BET(::TrackPopupMenu(
+		hPopupMenu,
+		TPM_TOPALIGN | TPM_LEFTALIGN,
+		point.x,
+		point.y,
 		0,
-		__uuidof(backBufferTexture),
-		reinterpret_cast<void**>(backBufferTexture.ReleaseAndGetAddressOf())));
-
-	// Set it up as a render target
-	OK(this->d3dDevice->CreateRenderTargetView(
-		backBufferTexture.Get(),
-		nullptr,
-		this->d3dBackBufferView.ReleaseAndGetAddressOf()));
-
-	return S_OK;
+		this->window,
+		NULL));
 }
 
-HRESULT TransparentWindow3D::ReleaseRenderTarget()
+LRESULT VisualizerWindow::Command(WPARAM wParam, LPARAM lParam)
 {
-	this->d3dBackBufferView = nullptr;
-	return S_OK;
+	// If from menu
+	if (HIWORD(wParam) == 0)
+	{
+		switch (LOWORD(wParam))
+		{
+		case MENU_EXIT:
+			::DestroyWindow(this->window);
+			return 0;
+		}
+	}
+
+	return 0;
 }
 
-HRESULT TransparentWindow3D::CreateDepthStencil()
+LRESULT VisualizerWindow::Close()
 {
-	D3D11_TEXTURE2D_DESC descriptor{};
-	descriptor.Width = this->size.right - this->size.left;
-	descriptor.Height = this->size.bottom - this->size.top;
-	descriptor.MipLevels = 1;
-	descriptor.ArraySize = 1;
-	descriptor.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-	descriptor.SampleDesc.Count = 1;
-	descriptor.SampleDesc.Quality = 0;
-	descriptor.Usage = D3D11_USAGE_DEFAULT;
-	descriptor.BindFlags = D3D11_BIND_DEPTH_STENCIL;
-	descriptor.CPUAccessFlags = 0;
-	descriptor.MiscFlags = 0;
-	OK(this->d3dDevice->CreateTexture2D(&descriptor, nullptr, this->d3dDepthTexture.ReleaseAndGetAddressOf()));
-
-	D3D11_DEPTH_STENCIL_VIEW_DESC viewDescriptor{};
-	viewDescriptor.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-	viewDescriptor.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
-	viewDescriptor.Texture2D.MipSlice = 0;
-	OK(this->d3dDevice->CreateDepthStencilView(
-		this->d3dDepthTexture.Get(),
-		&viewDescriptor,
-		this->d3dDepthStencilView.ReleaseAndGetAddressOf()));
-
-	return S_OK;
+	this->Destroy();
+	::PostQuitMessage(0);
+	return 0;
 }
 
-HRESULT TransparentWindow3D::ReleaseDepthStencil()
-{
-	this->d3dDepthStencilView = nullptr;
-	this->d3dDepthTexture = nullptr;
-	return S_OK;
-}
-
-HRESULT TransparentWindow3D::Resize()
-{
-	OK(this->ReleaseRenderTarget());
-	OK(this->ReleaseDepthStencil());
-	OK(TransparentWindow2D::Resize());
-	OK(this->CreateRenderTarget());
-	OK(this->CreateDepthStencil());
-	return S_OK;
-}

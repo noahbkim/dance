@@ -1,7 +1,9 @@
 {
   "ExpandedNodes": [
-    ""
+    "",
+    "\\Dance",
+    "\\Dance\\Visualizers"
   ],
-  "SelectedNode": "\\Dance.sln",
+  "SelectedNode": "\\Dance\\Visualizers\\Visualizer.h",
   "PreviewInSolutionExplorer": false
 }

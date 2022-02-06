@@ -1,5 +1,5 @@
 #include "Framework.h"
-#include "Visualizer.h"
+#include "Core/Window.h"
 
 // Indicates to hybrid graphics systems to prefer the discrete part by default
 extern "C"
@@ -11,8 +11,8 @@ extern "C"
 #define MAX_LOADED_STRING_LENGTH 100
 
 int APIENTRY wWinMain(
-    _In_ InstanceHandle instance,
-    _In_opt_ InstanceHandle previousInstance,
+    _In_ HINSTANCE instance,
+    _In_opt_ HINSTANCE previousInstance,
     _In_ LPWSTR commandLine,
     _In_ int showCommand)
 {

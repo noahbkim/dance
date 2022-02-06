@@ -32,7 +32,7 @@ HRESULT VisualizerWindow::Create()
 
 	this->d3dDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-	GetClientRect(this->window.get(), &this->size);
+	GetClientRect(this->window, &this->size);
 	Matrix4F projection = Matrix4F::YRotation(-Geometry::PiOver2)
 		* Matrix4F::ZRotation(-Geometry::PiOver2)
 		* Matrix4F::Perspective(
@@ -155,7 +155,7 @@ LRESULT VisualizerWindow::Render()
 
 	const size_t N = 30;
 
-	const size_t S = this->spectrum.size() / 2 / 24;
+	const size_t S = this->spectrum.size() / 2 / 20;
 	const size_t Q = S / N;
 
 	D2D1_RECT_F stroke;
@@ -184,7 +184,7 @@ LRESULT VisualizerWindow::Render()
 	// End and present
 	context->EndDraw();
 
-	
+	/*
 	this->d3dDeviceContext->ClearDepthStencilView(
 		this->d3dDepthStencilView.Get(),
 		D3D11_CLEAR_DEPTH,
@@ -197,7 +197,7 @@ LRESULT VisualizerWindow::Render()
 
 	this->camera.Activate();
 	this->cube.Render();
-	
+	*/
 	
 	this->dxgiSwapChain->Present(1, 0);
 	return 0;
@@ -225,7 +225,7 @@ LRESULT VisualizerWindow::MouseMove(WPARAM wParam, LPARAM lParam)
 		TRACKMOUSEEVENT tracking{};
 		tracking.cbSize = sizeof(tracking);
 		tracking.dwFlags = TME_NONCLIENT | TME_LEAVE;
-		tracking.hwndTrack = this->window.get();
+		tracking.hwndTrack = this->window;
 		tracking.dwHoverTime = HOVER_DEFAULT;
 		TrackMouseEvent(&tracking);
 		this->mouseTracking = true;
@@ -250,7 +250,7 @@ LRESULT VisualizerWindow::RightButtonDown(WPARAM wParam, LPARAM lParam)
 {
 	HMENU hPopupMenu = ::CreatePopupMenu();
 	BET(InsertMenu(hPopupMenu, 0, MF_BYPOSITION | MF_STRING, MENU_EXIT, L"Exit"));
-	BET(::SetForegroundWindow(this->window.get()));
+	BET(::SetForegroundWindow(this->window));
 	POINT point{ LOWORD(lParam), HIWORD(lParam) };
 	BET(::TrackPopupMenu(
 		hPopupMenu, 
@@ -258,7 +258,7 @@ LRESULT VisualizerWindow::RightButtonDown(WPARAM wParam, LPARAM lParam)
 		point.x,
 		point.y,
 		0,
-		this->window.get(),
+		this->window,
 		NULL));
 }
 
@@ -270,7 +270,7 @@ LRESULT VisualizerWindow::Command(WPARAM wParam, LPARAM lParam)
 		switch (LOWORD(wParam))
 		{
 		case MENU_EXIT:
-			::DestroyWindow(this->window.get());
+			::DestroyWindow(this->window);
 			return 0;
 		}
 	}
