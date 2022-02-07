@@ -33,5 +33,5 @@ protected:
     LRESULT RightButtonDown(WPARAM wParam, LPARAM lParam);
     LRESULT Command(WPARAM wParam, LPARAM lParam);
 
-    std::unique_ptr<BarsVisualizer> visualizer;
+    std::unique_ptr<Visualizer> visualizer;
 };

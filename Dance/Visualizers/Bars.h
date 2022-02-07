@@ -8,7 +8,7 @@
 
 #define SMOOTHING 10
 
-class BarsVisualizer : TwoVisualizer, AudioVisualizer
+class BarsVisualizer : public TwoVisualizer, public AudioVisualizer
 {
 public:
 	BarsVisualizer() : size{} {}

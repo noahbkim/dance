@@ -68,7 +68,7 @@ public:
 	}
 };
 
-class CubeVisualizer : ThreeVisualizer, AudioVisualizer
+class CubeVisualizer : public ThreeVisualizer, public AudioVisualizer
 {
 public:
 	CubeVisualizer() : size{} {}
