@@ -147,22 +147,21 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="Common\Buffer.h" />
-    <ClInclude Include="Common\Camera.h" />
-    <ClInclude Include="Common\d3dx12.h" />
-    <ClInclude Include="Common\Graphics.h" />
+    <ClInclude Include="Audio\Audio.h" />
+    <ClInclude Include="Audio\AudioAnalyzer.h" />
+    <ClInclude Include="Audio\AudioListener.h" />
     <ClInclude Include="Common\Pointer.h" />
-    <ClInclude Include="Common\Primitive.h" />
-    <ClInclude Include="Common\Renderable.h" />
-    <ClInclude Include="Common\Shader.h" />
-    <ClInclude Include="Common\Shorthand.h" />
-    <ClInclude Include="Core\Audio.h" />
-    <ClInclude Include="Core\Runtime.h" />
-    <ClInclude Include="Core\Window.h" />
-    <ClInclude Include="Engine\D3D\Camera.h" />
-    <ClInclude Include="Engine\D3D\Renderable.h" />
+    <ClInclude Include="Common\Runtime.h" />
+    <ClInclude Include="FFTW3\fftw3.h" />
     <ClInclude Include="Framework.h" />
-    <ClInclude Include="Mathematics.h" />
+    <ClInclude Include="Graphics\Buffer.h" />
+    <ClInclude Include="Graphics\Camera.h" />
+    <ClInclude Include="Graphics\d3dx12.h" />
+    <ClInclude Include="Graphics\Graphics.h" />
+    <ClInclude Include="Graphics\Primitive.h" />
+    <ClInclude Include="Graphics\Renderable.h" />
+    <ClInclude Include="Graphics\Shader.h" />
+    <ClInclude Include="Mathematics\Mathematics.h" />
     <ClInclude Include="Mathematics\Matrix3.h" />
     <ClInclude Include="Mathematics\Matrix4.h" />
     <ClInclude Include="Mathematics\Quaternion.h" />
@@ -175,13 +174,22 @@
     <ClInclude Include="Visualizers\Bars.h" />
     <ClInclude Include="Visualizers\Cube.h" />
     <ClInclude Include="Visualizers\Visualizer.h" />
+    <ClInclude Include="Window\BorderlessWindow.h" />
+    <ClInclude Include="Window\TransparentWindow.h" />
+    <ClInclude Include="Window\VisualizerWindow.h" />
+    <ClInclude Include="Window\Window.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Core\Audio.cpp" />
-    <ClCompile Include="Core\Runtime.cpp" />
-    <ClCompile Include="Core\Window.cpp" />
+    <ClCompile Include="Audio\Audio.cpp" />
+    <ClCompile Include="Audio\AudioAnalyzer.cpp" />
+    <ClCompile Include="Audio\AudioListener.cpp" />
+    <ClCompile Include="Common\Runtime.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="Visualizers\Visualizer.cpp" />
+    <ClCompile Include="Window\BorderlessWindow.cpp" />
+    <ClCompile Include="Window\TransparentWindow.cpp" />
+    <ClCompile Include="Window\VisualizerWindow.cpp" />
+    <ClCompile Include="Window\Window.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Dance.rc" />

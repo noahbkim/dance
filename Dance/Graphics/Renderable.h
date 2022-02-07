@@ -2,10 +2,10 @@
 
 #include "Framework.h"
 #include "Common/Pointer.h"
-#include "Common/Buffer.h"
-#include "Common/Primitive.h"
-#include "Common/Shader.h"
-#include "Mathematics.h"
+#include "Graphics/Buffer.h"
+#include "Graphics/Primitive.h"
+#include "Graphics/Shader.h"
+#include "Mathematics/Mathematics.h"
 
 enum ConstantBufferSlot
 {

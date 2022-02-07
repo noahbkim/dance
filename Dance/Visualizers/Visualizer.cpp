@@ -7,8 +7,8 @@ Visualizer::~Visualizer()
 
 HRESULT AudioVisualizer::Create(const Visualizer::Dependencies& dependencies)
 {
-    ComPtr<IMMDevice> device = getDefaultDevice();
-    TRACE("capturing " << getDeviceFriendlyName(device.Get()));
+    ComPtr<IMMDevice> device = getDefaultAudioDevice();
+    TRACE("capturing " << getAudioDeviceFriendlyName(device.Get()));
     this->analyzer = AudioAnalyzer(device, ONE_SECOND / 10);
     this->spectrum.resize(this->analyzer.Window());
     this->analyzer.Sink(reinterpret_cast<fftwf_complex*>(this->spectrum.data()));
@@ -38,6 +38,8 @@ HRESULT TwoVisualizer::Create(const Dependencies& dependencies)
     OK(this->d2dDevice->CreateDeviceContext(
         D2D1_DEVICE_CONTEXT_OPTIONS_NONE,
         this->d2dDeviceContext.ReleaseAndGetAddressOf()));
+
+	return S_OK;
 }
 
 HRESULT TwoVisualizer::Destroy()

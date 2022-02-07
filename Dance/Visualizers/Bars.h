@@ -50,8 +50,8 @@ public:
 		context->BeginDraw();
 		context->Clear();
 
-		const FLOAT w = this->size.right - this->size.left;
-		const FLOAT h = this->size.bottom - this->size.top;
+		const FLOAT w = static_cast<float>(this->size.right - this->size.left);
+		const FLOAT h = static_cast<float>(this->size.bottom - this->size.top);
 
 		D2D1_RECT_F stroke;
 		const FLOAT u = w / this->barCount;

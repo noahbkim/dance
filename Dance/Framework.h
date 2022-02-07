@@ -35,12 +35,14 @@
 #include <d2d1_2helper.h>
 #include <dcomp.h>
 #include <d3dcompiler.h>
+#include <dwmapi.h>
 
 #pragma comment(lib, "dxgi.lib")
 #pragma comment(lib, "d3d11.lib")
 #pragma comment(lib, "d2d1.lib")
 #pragma comment(lib, "dcomp.lib")
 #pragma comment(lib, "D3DCompiler.lib")
+#pragma comment(lib, "dwmapi.lib")
 
 #include <pix.h>
 #include <directxcolors.h>
@@ -64,11 +66,12 @@
 #include <mmreg.h>
 #include <functiondiscoverykeys_devpkey.h> 
 
+#pragma comment(lib, "comctl32.lib")
+#pragma comment(lib, "Winmm.lib")
+
 #include <string>
 #include <iostream>
 #include <sstream>
-
-#pragma comment(lib, "comctl32.lib")
 
 #include "Resource.h"
 
@@ -81,8 +84,6 @@
 	stream << __FILE__ << "(" << __LINE__ << ") " << message << std::endl; \
 	OutputDebugStringW(stream.str().c_str()); \
 }
-
-#define SUCCEEDING(call) if (HRESULT result = (call); result != S_OK) { TRACE("caught invalid HRESULT: " << std::hex << result); exit(result); }
 
 class ComError: public std::runtime_error
 {

@@ -1,9 +1,11 @@
 #pragma once
 
-#include "Common/Renderable.h"
-#include "Common/Buffer.h"
-#include "Common/Primitive.h"
-#include "Mathematics.h"
+#include "Graphics/Renderable.h"
+#include "Graphics/Buffer.h"
+#include "Graphics/Primitive.h"
+#include "Graphics/Shader.h"
+#include "Graphics/Camera.h"
+#include "Mathematics/Mathematics.h"
 #include "Visualizer.h"
 
 const static Vertex VERTICES[] = {

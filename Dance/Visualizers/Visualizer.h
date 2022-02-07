@@ -2,7 +2,9 @@
 
 #include "Framework.h"
 #include "Common/Pointer.h"
-#include "Core/Audio.h"
+#include "Audio/Audio.h"
+#include "Audio/Device.h"
+#include "Audio/AudioAnalyzer.h"
  
 #include <vector>
 

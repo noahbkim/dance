@@ -1,43 +1,4 @@
-#include "Audio.h"
-
-ComPtr<IMMDevice> getDefaultDevice()
-{
-    ComPtr<IMMDeviceEnumerator> deviceEnumerator;
-    OKE(CoCreateInstance(
-        __uuidof(MMDeviceEnumerator),
-        NULL,
-        CLSCTX_ALL,
-        __uuidof(IMMDeviceEnumerator),
-        (void**)deviceEnumerator.ReleaseAndGetAddressOf()));
-
-    ComPtr<IMMDevice> device;
-    OKE(deviceEnumerator->GetDefaultAudioEndpoint(eRender, eConsole, device.ReleaseAndGetAddressOf()));
-    return device;
-}
-
-std::wstring getDeviceId(ComPtr<IMMDevice> device)
-{
-    LPWSTR id = NULL;
-    OKE(device->GetId(&id));
-    std::wstring result(id);
-
-    ::CoTaskMemFree(id);
-    return result;
-}
-
-std::wstring getDeviceFriendlyName(ComPtr<IMMDevice> device)
-{
-    ComPtr<IPropertyStore> propertyStore;
-    OKE(device->OpenPropertyStore(STGM_READ, propertyStore.ReleaseAndGetAddressOf()));
-
-    PROPVARIANT name;
-    ::PropVariantInit(&name);
-    OKE(propertyStore->GetValue(PKEY_Device_FriendlyName, &name));
-    std::wstring result(name.pwszVal);
-    ::PropVariantClear(&name);
-
-    return result;
-}
+#include "AudioListener.h"
 
 AudioListener::AudioListener() : mmDevice(nullptr) {}
 
@@ -70,10 +31,7 @@ AudioListener::AudioListener(ComPtr<IMMDevice> device, REFERENCE_TIME duration) 
         __uuidof(IAudioCaptureClient),
         reinterpret_cast<void**>(this->audioCaptureClient.ReleaseAndGetAddressOf())));
 
-    // Calculate the true buffer duration
-    this->bufferDuration = (double)ONE_SECOND * this->bufferSize / this->waveFormat->nSamplesPerSec;
-
-    TRACE("buffer size: " << this->bufferSize << ", buffer duration: " << this->bufferDuration << ", rate: " << this->waveFormat->nSamplesPerSec);
+    TRACE("buffer size: " << this->bufferSize << ", rate: " << this->waveFormat->nSamplesPerSec);
 }
 
 bool AudioListener::Listen()
@@ -122,21 +80,6 @@ HRESULT AudioListener::Disable()
     return S_OK;
 }
 
-/*
-
-    this->listening = true;
-    while (this->listening)
-    {
-        ::Sleep(this->interval);
-        this->Listen();
-    }
-
-void AudioListener::Stop()
-{
-    this->listening = false;
-}
-*/
-
 HRESULT AudioListener::DetermineWaveFormat()
 {
     // Quirk of std::unique_ptr is that it won't give you its pointer address
@@ -173,80 +116,6 @@ HRESULT AudioListener::DetermineWaveFormat()
 
     // Verify that this format is supported
     OK(this->audioClient->IsFormatSupported(AUDCLNT_SHAREMODE_EXCLUSIVE, this->waveFormat.get(), NULL));
-}
 
-AudioAnalyzer::AudioAnalyzer() : AudioListener() {}
-
-AudioAnalyzer::AudioAnalyzer(ComPtr<IMMDevice> device, REFERENCE_TIME duration) 
-    : AudioListener(device, duration)
-    , fftwPlan()
-{
-    // The window is how much data we will ever analyze at once; we calculate it from duration
-    this->window = duration * this->waveFormat->nSamplesPerSec / ONE_SECOND;
-    TRACE("window: " << this->window);
-
-    // Resize the data container to fit our window continuously at any index
-    this->buffer.resize(this->window);
-    this->fftwBuffer.resize(this->window);
-}
-
-/*
-AudioAnalyzer::~AudioAnalyzer()
-{
-    // ::fftwf_destroy_plan(this->plan);
-}
-*/
-
-bool AudioAnalyzer::Listen()
-{
-    return AudioListener::Listen();
-}
-
-void AudioAnalyzer::Handle(PCMAudioFrame* data, UINT32 count, DWORD flags)
-{
-    // https://stackoverflow.com/questions/64158704/wasapi-captured-packets-do-not-align
-    if (flags & AUDCLNT_BUFFERFLAGS_DATA_DISCONTINUITY)
-    {
-        this->count = 0;
-        TRACE("discontinuity!");
-    }
-    if (flags & AUDCLNT_BUFFERFLAGS_SILENT)
-    {
-        TRACE("silent!");
-    }
-
-    // In the case that the new data is longer than the window, start where there's only one window left
-    if (count > this->window)
-    {
-        data += count - this->window;
-        count = this->window;
-    }
-
-    // Write as ring
-    for (size_t i = 0; i < count; ++i)
-    {
-        this->buffer[(this->index + i) % this->window].real = static_cast<float>(data[i].left);
-    }
-
-    // Update index, count, and timestamp
-    this->index = (this->index + count) % this->window;
-    this->count = std::min(this->count + count, this->window);
-    // TRACE("index: " << this->index << ", count: " << this->count << ", time: " << this->timestamp.QuadPart);
-}
-
-void AudioAnalyzer::Analyze()
-{
-    auto end = std::copy(this->buffer.begin() + this->index, this->buffer.end(), this->fftwBuffer.begin());
-    std::copy(this->buffer.begin(), this->buffer.begin() + index, end);
-    this->fftwPlan.Execute();
-}
-
-void AudioAnalyzer::Sink(fftwf_complex* out)
-{
-    this->fftwPlan.Overwrite(::fftwf_plan_dft_1d(
-        this->window,
-        reinterpret_cast<fftwf_complex*>(this->fftwBuffer.data()),
-        out,
-        FFTW_FORWARD,
-        FFTW_MEASURE));
+    return S_OK;
 }

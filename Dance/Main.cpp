@@ -1,5 +1,5 @@
 #include "Framework.h"
-#include "Core/Window.h"
+#include "Window/VisualizerWindow.h"
 
 // Indicates to hybrid graphics systems to prefer the discrete part by default
 extern "C"

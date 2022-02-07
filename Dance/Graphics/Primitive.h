@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Mathematics.h"
+#include "Mathematics/Mathematics.h"
 
 struct Position3
 {

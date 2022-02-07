@@ -1,12 +1,11 @@
 #pragma once
 
-#include "mathematics/utility.h"
-#include "mathematics/vector2.h"
-#include "mathematics/vector3.h"
-#include "mathematics/vector4.h"
-#include "mathematics/matrix3.h"
-#include "mathematics/matrix4.h"
-#include "mathematics/quaternion.h"
+#include "Mathematics/Vector2.h"
+#include "Mathematics/Vector3.h"
+#include "Mathematics/Vector4.h"
+#include "Mathematics/Matrix3.h"
+#include "Mathematics/Matrix4.h"
+#include "Mathematics/Quaternion.h"
 
 template<typename T>
 inline constexpr Vector2<T> Transform(const Matrix3<T>& m, const Vector2<T>& v, float z = 0.0f)

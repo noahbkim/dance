@@ -1,9 +1,8 @@
 #pragma once
 
 #include "Framework.h"
-#include "Mathematics.h"
-#include "Common/Buffer.h"
-#include "Common/Renderable.h"
+#include "Mathematics/Mathematics.h"
+#include "Graphics/Buffer.h"
 
 class Camera
 {
@@ -15,7 +14,7 @@ public:
 	{
 		Matrix4F ViewProjection;
 		Vector3F Position;
-		float _pad;
+		// float _pad;
 	};
 
 	Camera() : constants() {}
