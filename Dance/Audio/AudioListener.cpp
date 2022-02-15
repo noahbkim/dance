@@ -45,7 +45,7 @@ bool AudioListener::Listen()
     OKE(this->audioCaptureClient->GetNextPacketSize(&count));
     bool available = count > 0;
 
-    while (count != 0)
+    while (count > 0)
     {
         // This overewrites count with the real size of the buffer
         OKE(this->audioCaptureClient->GetBuffer(

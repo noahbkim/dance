@@ -3,18 +3,18 @@
 #include "Framework.h"
 #include "Common/Pointer.h"
 
-/* A REFERENCE_TIME increment is 100 nanoseconds. */
+/// A REFERENCE_TIME increment is 100 nanoseconds.
 #define ONE_SECOND 10000000
 #define ONE_MILLISECOND 10000
 
-/* A PCM audio frame is a pair of signed 16 - bit integers representing left and right. */
+/// A PCM audio frame is a pair of signed 16 - bit integers representing left and right.
 struct PCMAudioFrame
 {
     INT16 left;
     INT16 right;
 };
 
-/* Listens to system audio and writes to a ring buffer. */
+/// Listens to system audio and writes to a ring buffer.
 class AudioListener
 {
 public:

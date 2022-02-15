@@ -15,7 +15,7 @@ AudioAnalyzer::AudioAnalyzer(ComPtr<IMMDevice> device, REFERENCE_TIME duration)
     this->fftwBuffer.resize(this->window);
 }
 
-void AudioAnalyzer::Handle(PCMAudioFrame* data, UINT32 count, DWORD flags)
+void AudioAnalyzer::Handle(const PCMAudioFrame* data, UINT32 count, DWORD flags)
 {
     // https://stackoverflow.com/questions/64158704/wasapi-captured-packets-do-not-align
     if (flags & AUDCLNT_BUFFERFLAGS_DATA_DISCONTINUITY)
@@ -49,8 +49,8 @@ void AudioAnalyzer::Handle(PCMAudioFrame* data, UINT32 count, DWORD flags)
 
 void AudioAnalyzer::Analyze()
 {
-    auto end = std::copy(this->buffer.begin() + this->index, this->buffer.end(), this->fftwBuffer.begin());
-    std::copy(this->buffer.begin(), this->buffer.begin() + index, end);
+//    auto end = std::copy(this->buffer.begin() + this->index, this->buffer.end(), this->fftwBuffer.begin());
+//    std::copy(this->buffer.begin(), this->buffer.begin() + index, end);
     this->fftwPlan.Execute();
 }
 
@@ -58,7 +58,7 @@ void AudioAnalyzer::Sink(fftwf_complex* out)
 {
     this->fftwPlan.Overwrite(::fftwf_plan_dft_1d(
         this->window,
-        reinterpret_cast<fftwf_complex*>(this->fftwBuffer.data()),
+        reinterpret_cast<fftwf_complex*>(this->buffer.data()),
         out,
         FFTW_FORWARD,
         FFTW_MEASURE));

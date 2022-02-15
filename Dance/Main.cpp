@@ -27,10 +27,10 @@ int APIENTRY wWinMain(
         return result;
     }
 
-    VisualizerWindow visualizer(instance, L"VisualizerWindow", L"Dance");
-    OK(visualizer.Create());
-    OK(visualizer.Position(100, 100, 480, 480, SWP_FRAMECHANGED));
-    OK(visualizer.Prepare(showCommand));
+    VisualizerWindow window(instance, L"VisualizerWindow", L"Dance");
+    OK(window.Create());
+    OK(window.Position(100, 100, 480, 480, SWP_FRAMECHANGED));
+    OK(window.Prepare(showCommand));
 
     HACCEL acceleratorTable = LoadAccelerators(instance, MAKEINTRESOURCE(IDC_DANCE));
     MSG message;
@@ -42,7 +42,7 @@ int APIENTRY wWinMain(
             DispatchMessage(&message);
         }
 
-        visualizer.Tick();
+        window.Tick();
     }
 
     ::CoUninitialize();
