@@ -21,13 +21,11 @@
 // WinHelp is deprecated
 #define NOHELP
 
+// Core windows includes
 #include <windows.h>
 #include <windowsx.h>
-#include <stdlib.h>
-#include <malloc.h>
-#include <memory.h>
-#include <tchar.h>
 
+// Graphics
 #include <wingdi.h>
 #include <dxgi1_2.h>
 #include <d3d11_4.h>
@@ -36,39 +34,33 @@
 #include <dcomp.h>
 #include <d3dcompiler.h>
 #include <dwmapi.h>
-
 #pragma comment(lib, "dxgi.lib")
 #pragma comment(lib, "d3d11.lib")
 #pragma comment(lib, "d2d1.lib")
 #pragma comment(lib, "dcomp.lib")
 #pragma comment(lib, "D3DCompiler.lib")
 #pragma comment(lib, "dwmapi.lib")
+#pragma comment(lib, "dxguid.lib")
 
-#include <pix.h>
-#include <directxcolors.h>
-#include <directxmath.h>
-
-#include <algorithm>
-#include <cmath>
-#include <cstdint>
-#include <exception>
-#include <iterator>
-#include <memory>
-#include <stdexcept>
-
+// Audio
 #include <wrl.h>
 #include <wrl/client.h>
-
 #include <CommCtrl.h>
 #include <mmdeviceapi.h>
 #include <audioclient.h>
 #include <audiopolicy.h>
 #include <mmreg.h>
 #include <functiondiscoverykeys_devpkey.h> 
-
 #pragma comment(lib, "comctl32.lib")
 #pragma comment(lib, "Winmm.lib")
 
+// Useful stuff we use frequently
+#include <algorithm>
+#include <cmath>
+#include <cstdint>
+#include <exception>
+#include <memory>
+#include <stdexcept>
 #include <string>
 #include <iostream>
 #include <sstream>
@@ -107,11 +99,3 @@ private:
 #define BETE(call) if (BOOL result = (call); !result) { throw ComError(E_FAIL); }
 
 #define GUARD(call, name) if (HRESULT name = (call); name != S_OK)
-
-inline void ThrowIfFailed(HRESULT hr)
-{
-    if (FAILED(hr))
-    {
-        throw std::exception();
-    }
-}

@@ -1,6 +1,6 @@
 #include "AudioListener.h"
 
-AudioListener::AudioListener() : mmDevice(nullptr) {}
+AudioListener::AudioListener() {}
 
 AudioListener::AudioListener(ComPtr<IMMDevice> device, REFERENCE_TIME duration) : mmDevice(device)
 {
@@ -66,7 +66,6 @@ bool AudioListener::Listen()
 
     return available;
 }
-
 
 HRESULT AudioListener::Enable()
 {
