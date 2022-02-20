@@ -120,13 +120,12 @@ HRESULT TransparentWindow::Resize()
 
 	// https://docs.microsoft.com/en-us/windows/win32/direct2d/direct2d-and-direct3d-interoperation-overview?redirectedfrom=MSDN#resizing-a-dxgi-surface-render-target
 	// Resize the swap chain
-	HRESULT hr = this->dxgiSwapChain->ResizeBuffers(
+	OK(this->dxgiSwapChain->ResizeBuffers(
 		2,
 		this->size.right - this->size.left,
 		this->size.bottom - this->size.top,
 		DXGI_FORMAT_B8G8R8A8_UNORM,
-		0);
-	OK(hr);
+		0));
 
 	return S_OK;
 }

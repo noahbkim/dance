@@ -9,9 +9,7 @@ HRESULT AudioVisualizer::Create(const Visualizer::Dependencies& dependencies)
 {
     ComPtr<IMMDevice> device = getDefaultAudioDevice();
     TRACE("capturing " << getAudioDeviceFriendlyName(device.Get()));
-    this->analyzer = AudioAnalyzer(device, ONE_SECOND / 10);
-    this->spectrum.resize(this->analyzer.Window());
-    this->analyzer.Sink(reinterpret_cast<fftwf_complex*>(this->spectrum.data()));
+    this->analyzer = AudioAnalyzer(device, ONE_SECOND / 20);
     this->analyzer.Enable();
 	return S_OK;
 }

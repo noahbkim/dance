@@ -8,6 +8,18 @@
 
 #define SMOOTHING 10
 
+static inline float v(float n, float a, float h, float l)
+{
+	const float k = fmod(n + h / 30.0f, 12.0f);
+	return l - a * std::max(std::min(k - 3.0f, 9.0f - k), -1.0f);
+}
+
+static inline D2D1::ColorF rgb(float h, float s, float l)
+{
+	const float a = s * std::min(l, 1.0f - l);
+	return D2D1::ColorF(v(0.0f, a, h, l), v(8.0f, a, h, l), v(4.0f, a, h, l), 1.0f);
+}
+
 class BarsVisualizer : public TwoVisualizer, public AudioVisualizer
 {
 public:
@@ -18,9 +30,9 @@ public:
 		OK(TwoVisualizer::Create(dependencies));
 		OK(AudioVisualizer::Create(dependencies));
 
-		this->barCount = 30;
+		this->barCount = 60;
 		this->sampleStart = 0;
-		this->sampleEnd = this->spectrum.size() / 2 / 20;
+		this->sampleEnd = this->analyzer.Spectrum().size() / 20;
 		this->samplesPerBar = (this->sampleEnd - this->sampleStart) / this->barCount;
 		this->levels.resize(this->barCount);
 
@@ -55,13 +67,14 @@ public:
 
 		D2D1_RECT_F stroke;
 		const FLOAT u = w / this->barCount;
+		const size_t normalize = this->analyzer.Spectrum().size();
 
 		for (size_t i = 0; i < this->barCount; ++i)
 		{
 			FLOAT level = 0.0f;
 			for (size_t j = this->samplesPerBar * i; j < this->samplesPerBar * (i + 1); ++j)
 			{
-				level += this->spectrum[j].magnitude(this->spectrum.size());
+				level += this->analyzer.Spectrum()[j].magnitude(normalize);
 			}
 			this->levels[i][this->levelIndex] = level / this->samplesPerBar;
 
@@ -75,10 +88,13 @@ public:
 			const FLOAT left = u * i;
 			stroke = {
 				std::round(left),
-				h - level,
+				h - ((level / 500.0f)) / ((level / 500.0f) + 1) * h,
 				std::round(left + u),
 				h
 			};
+
+
+			brush->SetColor(rgb(std::max(360.0f, std::log(level) * 100.0f), 1.0f, 0.5f));
 			context->FillRectangle(stroke, brush.Get());
 		}
 

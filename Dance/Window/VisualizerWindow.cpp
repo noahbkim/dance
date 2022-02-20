@@ -1,6 +1,8 @@
 #include "VisualizerWindow.h"
 
 static const int MENU_EXIT = 42;
+static const MARGINS SHADOW_VISIBLE{ 1, 1, 1, 1 };
+static const MARGINS SHADOW_INVISIBLE{ 0, 0, 0, 0 };
 
 VisualizerWindow::VisualizerWindow
 (
@@ -91,10 +93,9 @@ void VisualizerWindow::Update(double delta)
 LRESULT VisualizerWindow::MouseMove(WPARAM wParam, LPARAM lParam)
 {
 	this->isMouseHovering = true;
-
-	static const MARGINS shadow_state{ 1, 1, 1, 1 };
-	OK(::DwmExtendFrameIntoClientArea(this->window, &shadow_state));
-
+	OK(::DwmExtendFrameIntoClientArea(this->window, &SHADOW_VISIBLE));
+	
+	// Track again
 	if (!this->isMouseTracking)
 	{
 		TRACKMOUSEEVENT tracking{};
@@ -111,11 +112,7 @@ LRESULT VisualizerWindow::MouseMove(WPARAM wParam, LPARAM lParam)
 LRESULT VisualizerWindow::MouseHover(WPARAM wParam, LPARAM lParam)
 {
 	this->isMouseHovering = true;
-
-	TRACE("show shadow");
-	static const MARGINS shadow_state{ 1, 1, 1, 1 };
-	OK(::DwmExtendFrameIntoClientArea(this->window, &shadow_state));
-
+	OK(::DwmExtendFrameIntoClientArea(this->window, &SHADOW_VISIBLE));
 	return 0;
 }
 
@@ -124,9 +121,11 @@ LRESULT VisualizerWindow::MouseLeave(WPARAM wParam, LPARAM lParam)
 	this->isMouseHovering = false;
 	this->isMouseTracking = false;
 
-	TRACE("hide shadow");
-	static const MARGINS shadow_state{ 0, 0, 0, 0 };
-	OK(::DwmExtendFrameIntoClientArea(this->window, &shadow_state));
+	// The mouse technically leaves if we move or resize the window but we still want to see borders.
+	if (!this->isResizingOrMoving)
+	{
+		OK(::DwmExtendFrameIntoClientArea(this->window, &SHADOW_INVISIBLE));
+	}
 
 	return 0;
 }
@@ -134,17 +133,21 @@ LRESULT VisualizerWindow::MouseLeave(WPARAM wParam, LPARAM lParam)
 LRESULT VisualizerWindow::RightButtonDown(WPARAM wParam, LPARAM lParam)
 {
 	HMENU hPopupMenu = ::CreatePopupMenu();
-	BET(InsertMenu(hPopupMenu, 0, MF_BYPOSITION | MF_STRING, MENU_EXIT, L"Exit"));
+	BET(InsertMenu(
+		hPopupMenu, 
+		0, 
+		MF_BYPOSITION | MF_STRING, 
+		MENU_EXIT,
+		L"Exit"));
 	BET(::SetForegroundWindow(this->window));
-	POINT point{ LOWORD(lParam), HIWORD(lParam) };
 	BET(::TrackPopupMenu(
 		hPopupMenu,
 		TPM_TOPALIGN | TPM_LEFTALIGN,
-		point.x,
-		point.y,
+		LOWORD(lParam),
+		HIWORD(lParam),
 		0,
 		this->window,
-		NULL));
+		nullptr));
 
 	return 0;
 }

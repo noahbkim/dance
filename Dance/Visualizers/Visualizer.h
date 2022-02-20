@@ -49,7 +49,6 @@ public:
     virtual HRESULT Destroy();
 
 protected:
-    std::vector<FFTWFComplex> spectrum;
     AudioAnalyzer analyzer;
 };
 

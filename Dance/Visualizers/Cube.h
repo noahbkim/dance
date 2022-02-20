@@ -127,10 +127,12 @@ public:
 	{
 		AudioVisualizer::Update(delta);
 
+		const size_t normalize = this->analyzer.Spectrum().size();
+
 		FLOAT level = 0.0f;
 		for (size_t i = 100; i < 600; ++i)
 		{
-			level += this->spectrum[i].magnitude(this->spectrum.size());
+			level += this->analyzer.Spectrum()[i].magnitude(normalize);
 		}
 
 		this->theta += delta;

@@ -83,34 +83,56 @@ private:
     bool created;
 };
 
+/// Whether we create a separate buffer to "un-ring" the contents of the raw audio data buffer before performing the
+/// FFT. Unclear whether this is necessary. Maybe if I'd paid attention in complex I'd remember.
+// #define ORDER
+
 class AudioAnalyzer : public AudioListener
 {
 public:
+    /// Initialize an empty audio analyzer without performing allocation. Will not work in this state.
     AudioAnalyzer();
+
+    /// Initialize a new audio analyzer for a system audio device and with a buffer duration. Parameters directly
+    /// mirror those passed to the AudioListener.
+    /// 
+    /// @param device expects a ComPtr to a system audio device.
+    /// @param duration is a duration in 100 ns intervals corresponding to hnsPeriodicity in IAudioClient::Initialize.
+    /// @exception ComError if format determination fails, audio client initialization fails, or capture setup fails.
     AudioAnalyzer(ComPtr<IMMDevice> device, REFERENCE_TIME duration);
 
+    /// We override the handle method to write the audio frame to our ring buffer for later analysis. Because this
+    /// buffer is written to circularly, it may have to be reordered prior to analysis.
+    /// 
+    /// @param data the PCM audio frame array recevied from the AudioClient.
+    /// @param count the number of frames in the data blob.
+    /// @param flags any additional flags yielded by the audio frame.
     virtual void Handle(const PCMAudioFrame* data, UINT32 count, DWORD flags);
+
+    /// Run the fftwf_plan on the data buffer we've been adding to in AudioAnalyzer::Handle.
     void Analyze();
 
-    void Sink(fftwf_complex* out);
-
-    size_t Window() const
-    {
-        return this->window;
-    }
+    /// Get a reference to the spectrum data.
+    /// 
+    /// @returns a const reference to the complex spectrum output.
+    const std::vector<FFTWFComplex>& Spectrum() const;
 
 protected:
     // Parameters
-    UINT32 window{ 0 };
-    UINT32 rate{ 0 };
+    size_t window{ 0 };
 
     // Buffer
-    std::vector<FFTWFComplex> buffer;
-    UINT32 index{ 0 };
-    UINT32 count{ 0 };
+    std::vector<float> buffer;
+    size_t index{ 0 };
+    size_t count{ 0 };
     LARGE_INTEGER timestamp{ 0 };
 
     // FFT
-    FFTWFPlan fftwPlan;
-    std::vector<FFTWFComplex> fftwBuffer;
+    FFTWFPlan fft;
+    std::vector<FFTWFComplex> spectrum;
+
+    /// If we wish to order the contents of the ring buffer prior to running the FFT, preallocate that space.
+#ifdef ORDER
+    std::vector<float> ordered;
+#endif
 };

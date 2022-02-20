@@ -4,15 +4,28 @@ AudioAnalyzer::AudioAnalyzer() : AudioListener() {}
 
 AudioAnalyzer::AudioAnalyzer(ComPtr<IMMDevice> device, REFERENCE_TIME duration)
     : AudioListener(device, duration)
-    , fftwPlan()
+    , fft()
 {
     // The window is how much data we will ever analyze at once; we calculate it from duration
-    this->window = static_cast<UINT32>(duration * this->waveFormat->nSamplesPerSec / ONE_SECOND);
-    TRACE("window: " << this->window);
+    this->window = static_cast<size_t>(duration) * this->waveFormat->nSamplesPerSec / ONE_SECOND;
 
     // Resize the data container to fit our window continuously at any index
     this->buffer.resize(this->window);
-    this->fftwBuffer.resize(this->window);
+    this->spectrum.resize(this->window / 2 + 1);
+#ifdef ORDER
+    this->ordered.resize(this->window);
+#endif
+
+    // Create the FFT plan
+    this->fft.Overwrite(::fftwf_plan_dft_r2c_1d(
+        this->window,
+#ifdef ORDER
+        reinterpret_cast<float*>(this->ordered.data()),
+#else
+        reinterpret_cast<float*>(this->buffer.data()),
+#endif
+        reinterpret_cast<fftwf_complex*>(this->spectrum.data()),
+        FFTW_MEASURE));
 }
 
 void AudioAnalyzer::Handle(const PCMAudioFrame* data, UINT32 count, DWORD flags)
@@ -38,28 +51,24 @@ void AudioAnalyzer::Handle(const PCMAudioFrame* data, UINT32 count, DWORD flags)
     // Write as ring
     for (size_t i = 0; i < count; ++i)
     {
-        this->buffer[(this->index + i) % this->window].real = static_cast<float>(data[i].left);
+        this->buffer[(this->index + i) % this->window] = static_cast<float>(data[i].left);
     }
 
     // Update index, count, and timestamp
     this->index = (this->index + count) % this->window;
     this->count = std::min(this->count + count, this->window);
-    // TRACE("index: " << this->index << ", count: " << this->count << ", time: " << this->timestamp.QuadPart);
 }
 
 void AudioAnalyzer::Analyze()
 {
-//    auto end = std::copy(this->buffer.begin() + this->index, this->buffer.end(), this->fftwBuffer.begin());
-//    std::copy(this->buffer.begin(), this->buffer.begin() + index, end);
-    this->fftwPlan.Execute();
+#ifdef ORDER
+    auto end = std::copy(this->buffer.begin() + this->index, this->buffer.end(), this->ordered.begin());
+    std::copy(this->buffer.begin(), this->buffer.begin() + index, end);
+#endif
+    this->fft.Execute();
 }
 
-void AudioAnalyzer::Sink(fftwf_complex* out)
+const std::vector<FFTWFComplex>& AudioAnalyzer::Spectrum() const 
 {
-    this->fftwPlan.Overwrite(::fftwf_plan_dft_1d(
-        this->window,
-        reinterpret_cast<fftwf_complex*>(this->buffer.data()),
-        out,
-        FFTW_FORWARD,
-        FFTW_MEASURE));
+    return this->spectrum;
 }
