@@ -4,7 +4,7 @@
 #include "AudioListener.h"
 
 #include "FFTW3/fftw3.h"
-#pragma comment(lib, "FFTW3/libfftw3f-3.lib")
+// #pragma comment(lib, "FFTW3/libfftw3f-3.lib")
 
 /// A complex audio frame consists of a real part and imaginary part. These do not correspond to left and right; 
 /// instead, the real part is used for audio magnitude and the imaginary part should be zero.
@@ -107,7 +107,7 @@ public:
     /// @param data the PCM audio frame array recevied from the AudioClient.
     /// @param count the number of frames in the data blob.
     /// @param flags any additional flags yielded by the audio frame.
-    virtual void Handle(const PCMAudioFrame* data, UINT32 count, DWORD flags);
+    virtual void Handle(const PCMAudioFrame* data, size_t count, DWORD flags);
 
     /// Run the fftwf_plan on the data buffer we've been adding to in AudioAnalyzer::Handle.
     void Analyze();
@@ -118,17 +118,22 @@ public:
     const std::vector<FFTWFComplex>& Spectrum() const;
 
 protected:
-    // Parameters
+    /// The number of audio frames to use for the FFT.
     size_t window{ 0 };
 
-    // Buffer
+    /// Initial buffer for the real samples that we'll run the FFT on.
     std::vector<float> buffer;
-    size_t index{ 0 };
-    size_t count{ 0 };
-    LARGE_INTEGER timestamp{ 0 };
 
-    // FFT
+    /// Current index of where we are in the ring buffer.
+    size_t index{ 0 };
+
+    /// The number of continuous samples prior to the index.
+    size_t count{ 0 };
+
+    /// Precomputed FFT parameters and allocated memory.
     FFTWFPlan fft;
+    
+    /// A container for the result of the FFT.
     std::vector<FFTWFComplex> spectrum;
 
     /// If we wish to order the contents of the ring buffer prior to running the FFT, preallocate that space.

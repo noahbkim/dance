@@ -67,7 +67,7 @@ protected:
     /// @param count is the number of frames in the packet.
     /// @param flags contains information about discontinuities, silence, etc.
     /// @see AudioListener::Listen
-    virtual void Handle(const PCMAudioFrame* data, UINT32 count, DWORD flags) = 0;
+    virtual void Handle(const PCMAudioFrame* data, size_t count, DWORD flags) = 0;
 
 private:
     /// Whether the listener is enabled.
