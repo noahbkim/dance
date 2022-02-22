@@ -4,7 +4,7 @@ Dance is the working name for a high performance music visualizer powered by the
 The goal of this project is not just to provide exciting visuals and customization for end users, but also to serve as a reference for how to use the API's this application is built on.
 In addition to maintaining a consistent code format and idiomatic style, there will be extensive documentation covering pretty much every line of code.
 
-![the bars visualizer running on my desktop](Images/bars.png)
+![the bars visualizer running on my desktop](Images/Bars.png)
 
 ## Design
 
