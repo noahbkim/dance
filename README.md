@@ -1,8 +1,8 @@
 # Dance
 
 Dance is the working name for a high performance music visualizer powered by the Windows multimedia API, FFTW3, and DirectX.
-The goal of this project is not just to provide exciting visuals and customization for end users, but also to serve as a reference for how to use the API's this application is built on.
-In addition to maintaining a consistent code format and idiomatic style, there will be extensive documentation covering pretty much every line of code.
+The goal of this project is twofold: to provide exciting visuals and customization for end users while also serving as a reference for the APIs it relies on.
+In addition to maintaining a consistent code format and idiomatic style, our goal is to document pretty much every line of code.
 
 ![the bars visualizer running on my desktop](Images/Bars.png)
 
