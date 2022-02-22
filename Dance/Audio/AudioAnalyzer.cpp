@@ -25,7 +25,7 @@ AudioAnalyzer::AudioAnalyzer(ComPtr<IMMDevice> device, REFERENCE_TIME duration)
         reinterpret_cast<float*>(this->buffer.data()),
 #endif
         reinterpret_cast<fftwf_complex*>(this->spectrum.data()),
-        FFTW_MEASURE));
+        static_cast<unsigned int>(FFTW_MEASURE)));
 }
 
 void AudioAnalyzer::Handle(const PCMAudioFrame* data, size_t count, DWORD flags)

@@ -132,19 +132,19 @@ LRESULT VisualizerWindow::MouseLeave(WPARAM wParam, LPARAM lParam)
 
 LRESULT VisualizerWindow::RightButtonDown(WPARAM wParam, LPARAM lParam)
 {
-	HMENU hPopupMenu = ::CreatePopupMenu();
+	HMENU menu = ::CreatePopupMenu();
 	BET(InsertMenu(
-		hPopupMenu, 
+		menu,
 		0, 
 		MF_BYPOSITION | MF_STRING, 
 		MENU_EXIT,
 		L"Exit"));
 	BET(::SetForegroundWindow(this->window));
 	BET(::TrackPopupMenu(
-		hPopupMenu,
+		menu,
 		TPM_TOPALIGN | TPM_LEFTALIGN,
-		LOWORD(lParam),
-		HIWORD(lParam),
+		GET_X_LPARAM(lParam),
+		GET_Y_LPARAM(lParam),
 		0,
 		this->window,
 		nullptr));

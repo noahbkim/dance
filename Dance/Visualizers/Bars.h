@@ -30,11 +30,8 @@ public:
 		OK(TwoVisualizer::Create(dependencies));
 		OK(AudioVisualizer::Create(dependencies));
 
-		this->barCount = 60;
-		this->sampleStart = 0;
-		this->sampleEnd = this->analyzer.Spectrum().size() / 20;
-		this->samplesPerBar = (this->sampleEnd - this->sampleStart) / this->barCount;
-		this->levels.resize(this->barCount);
+		// Bounds of actual FFT spectrum we use
+
 
 		D2D1_COLOR_F const color = D2D1::ColorF(1.0f, 1.0f, 1.0f, 1.0f);
 		this->d2dDeviceContext->CreateSolidColorBrush(color, brush.GetAddressOf());
@@ -51,6 +48,13 @@ public:
 	virtual HRESULT Resize(const RECT& size)
 	{
 		this->size = size;
+
+		this->barCount = std::min(static_cast<size_t>(size.right - size.left) / 40, this->analyzer.Spectrum().size());
+		this->sampleStart = 0;
+		this->sampleEnd = std::max(this->barCount, this->analyzer.Spectrum().size() / 20);
+		this->samplesPerBar = (this->sampleEnd - this->sampleStart) / this->barCount;
+		this->levels.resize(this->barCount);
+
 		OK(TwoVisualizer::Resize(size));
 		return S_OK;
 	}
