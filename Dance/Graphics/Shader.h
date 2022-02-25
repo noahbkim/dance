@@ -13,18 +13,35 @@ constexpr DWORD SHADER_COMPILE_FLAGS = D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE
 constexpr DWORD SHADER_COMPILE_FLAGS = D3DCOMPILE_ENABLE_STRICTNESS;
 #endif
 
-
+/// Wraps rudimentary aspects of a GLSL shader. Compiles for vs_5_0 and ps_5_0.
 class Shader
 {
 public:
-    Shader() : deviceContext(nullptr), vertexShader(nullptr), pixelShader(nullptr), inputLayout(nullptr) {}
+    /// Empty initialize a shader. Makes no allocation but produces undefined behavior in its empty state.
+    Shader() 
+        : deviceContext(nullptr)
+        , vertexShader(nullptr)
+        , pixelShader(nullptr)
+        , inputLayout(nullptr) 
+    {}
 
+    /// Construct a shader using a D3D11 device, a path to a GLSL file, and a vertex layout. Invokes Shader::Compile
+    /// directly, so see that method for specifics and error handling. Entry points for the vertex and pixel shaders
+    /// should be named VS and PS respectively.
+    /// 
+    /// @param device expects a ComPtr to a D3D11 device, from which we extract the immediate context for later use.
+    /// @param path should be a valid file path to the GLSL shader we will compile and use.
+    /// @param layout must describe the vertex layout, matching both the vertex data we apply the shader to as well as
+    /// the input struct declared in the actual shader file.
+    /// @param layoutCount should be the number of elements in the layout array.
+    /// @throws ComError if vertex shader, pixel shader, or input layout creation fails.
+    /// @seealso Shader::Compile
     Shader
     (
         ComPtr<ID3D11Device> device,
         const WCHAR* path,
         const D3D11_INPUT_ELEMENT_DESC* layout,
-        UINT count
+        UINT layoutCount
     )
     {
         device->GetImmediateContext(this->deviceContext.ReleaseAndGetAddressOf());
@@ -44,12 +61,13 @@ public:
             this->pixelShader.ReleaseAndGetAddressOf()));
         OKE(device->CreateInputLayout(
             layout,
-            count,
+            layoutCount,
             pBlobVS->GetBufferPointer(),
             pBlobVS->GetBufferSize(),
             this->inputLayout.ReleaseAndGetAddressOf()));
     }
 
+    /// Apply the shader to the device context, making it so that rendered objects pass through this pipeline.
     void Apply() const
     {
         this->deviceContext->VSSetShader(this->vertexShader.Get(), nullptr, 0);
@@ -57,6 +75,12 @@ public:
         this->deviceContext->IASetInputLayout(this->inputLayout.Get());
     }
 
+    /// Compile a shader file using D3D's builtin GLSL compiler.
+    ///
+    /// @param path should be a valid file path to the GLSL shader we will compile and use.
+    /// @param entry is the entry point of the function we're compiling for.
+    /// @param model is the compilation model we're targeting.
+    /// @returns a ComPtr to a D3DBlob containing the compiled shader assembly.
     static ComPtr<ID3DBlob> Compile(const WCHAR* path, const char* entry, const char* model)
     {
         ComPtr<ID3DBlob> shaderBlob;
@@ -89,8 +113,15 @@ public:
     }
 
 private:
+    /// Reference to the device context for applying the shader.
     ComPtr<ID3D11DeviceContext> deviceContext;
+
+    /// Managed vertex shader.
     ComPtr<ID3D11VertexShader> vertexShader;
+
+    /// Managed pixel shader.
     ComPtr<ID3D11PixelShader> pixelShader;
+
+    /// Managed input layout.
     ComPtr<ID3D11InputLayout> inputLayout;
 };

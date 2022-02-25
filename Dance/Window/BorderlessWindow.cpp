@@ -29,7 +29,7 @@ void adjustMaximizedClientRectangle(HWND window, RECT& rectangle)
 
 BorderlessWindow::BorderlessWindow
 (
-	InstanceHandle instance,
+	HINSTANCE instance,
 	std::wstring windowClassName,
 	std::wstring windowTitle
 )
