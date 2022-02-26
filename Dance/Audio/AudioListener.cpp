@@ -12,7 +12,9 @@ AudioListener::AudioListener(ComPtr<IMMDevice> device, REFERENCE_TIME duration) 
         reinterpret_cast<void**>(this->audioClient.ReleaseAndGetAddressOf())));
 
     // Determine the available wave format
-    OKE(this->DetermineWaveFormat());
+    WAVEFORMATEX* waveFormat;
+    this->audioClient->GetMixFormat(&waveFormat);
+    this->waveFormat.reset(waveFormat);
 
     // Initialize the audio client and request the provided duration and determined wave format
     OKE(this->audioClient->Initialize(
@@ -79,42 +81,3 @@ HRESULT AudioListener::Disable()
     return S_OK;
 }
 
-HRESULT AudioListener::DetermineWaveFormat()
-{
-    // Quirk of std::unique_ptr is that it won't give you its pointer address
-    WAVEFORMATEX* waveFormat;
-    this->audioClient->GetMixFormat(&waveFormat);
-    this->waveFormat.reset(waveFormat);
-
-    // Switch down to 2 channels; we don't support one channel right now TODO
-    if (this->waveFormat->nChannels != 2)
-    {
-        this->waveFormat->nChannels = 2;
-    }
-
-    // First convert from floating point to PCM
-    if (this->waveFormat->wFormatTag == WAVE_FORMAT_IEEE_FLOAT)
-    {
-        this->waveFormat->wFormatTag = WAVE_FORMAT_PCM;
-        this->waveFormat->wBitsPerSample = 16;
-        this->waveFormat->nBlockAlign = (this->waveFormat->wBitsPerSample / 8) * this->waveFormat->nChannels;
-        this->waveFormat->nAvgBytesPerSec = this->waveFormat->nSamplesPerSec * this->waveFormat->nBlockAlign;
-    }
-    else if (this->waveFormat->wFormatTag == WAVE_FORMAT_EXTENSIBLE)
-    {
-        WAVEFORMATEXTENSIBLE* waveFormatExtensible = reinterpret_cast<WAVEFORMATEXTENSIBLE*>(this->waveFormat.get());
-        if (waveFormatExtensible->SubFormat == KSDATAFORMAT_SUBTYPE_IEEE_FLOAT)
-        {
-            waveFormatExtensible->SubFormat = KSDATAFORMAT_SUBTYPE_PCM;
-            waveFormatExtensible->Format.wBitsPerSample = 16;
-            waveFormatExtensible->Format.nBlockAlign = (waveFormatExtensible->Format.wBitsPerSample / 8) * waveFormatExtensible->Format.nChannels;
-            waveFormatExtensible->Format.nAvgBytesPerSec = waveFormatExtensible->Format.nSamplesPerSec * waveFormatExtensible->Format.nBlockAlign;
-            waveFormatExtensible->Samples.wValidBitsPerSample = 16;
-        }
-    }
-
-    // Verify that this format is supported
-    OK(this->audioClient->IsFormatSupported(AUDCLNT_SHAREMODE_EXCLUSIVE, this->waveFormat.get(), NULL));
-
-    return S_OK;
-}

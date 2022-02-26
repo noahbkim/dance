@@ -227,10 +227,10 @@ public:
     /// 
     /// @param index is the index we set the buffer to.
     /// @param count is the number of items we want to write to the buffer.
-    inline void Set(UINT index, UINT count = this->count) const
+    inline void Set(UINT index) const
     {
-        this->deviceContext->VSSetConstantBuffers(index, count, this->buffer.GetAddressOf());
-        this->deviceContext->PSSetConstantBuffers(index, count, this->buffer.GetAddressOf());
+        this->deviceContext->VSSetConstantBuffers(index, this->count, this->buffer.GetAddressOf());
+        this->deviceContext->PSSetConstantBuffers(index, this->count, this->buffer.GetAddressOf());
     }
 
 protected:

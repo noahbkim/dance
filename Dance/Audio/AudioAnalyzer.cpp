@@ -10,30 +10,56 @@ AudioAnalyzer::AudioAnalyzer(ComPtr<IMMDevice> device, REFERENCE_TIME duration)
     this->window = static_cast<size_t>(duration) * this->waveFormat->nSamplesPerSec / ONE_SECOND;
 
     // Resize the data container to fit our window continuously at any index
-    this->buffer.resize(this->window);
+    this->buffer.Resize(this->window);
     this->spectrum.resize(this->window / 2 + 1);
-#ifdef ORDER
-    this->ordered.resize(this->window);
-#endif
 
     // Create the FFT plan
     this->fft.Overwrite(::fftwf_plan_dft_r2c_1d(
         this->window,
-#ifdef ORDER
-        reinterpret_cast<float*>(this->ordered.data()),
-#else
-        reinterpret_cast<float*>(this->buffer.data()),
-#endif
+        reinterpret_cast<float*>(this->buffer.Data()),
         reinterpret_cast<fftwf_complex*>(this->spectrum.data()),
         static_cast<unsigned int>(FFTW_MEASURE)));
+
+    // Determine what kind of audio adapter we need
+    if (this->waveFormat->wFormatTag == WAVE_FORMAT_PCM)
+    {
+        if (this->waveFormat->wBitsPerSample == 16)
+        {
+            this->adapter = std::make_unique<StaticAudioAdapter<INT16>>(this->waveFormat->nChannels);
+        }
+        else if (this->waveFormat->wBitsPerSample == 32)
+        {
+            this->adapter = std::make_unique<StaticAudioAdapter<INT32>>(this->waveFormat->nChannels);
+        }
+        else
+        {
+            throw ComError(E_INVALIDARG, "unknown PCM audio format");
+        }
+    }
+    else if (this->waveFormat->wFormatTag == WAVE_FORMAT_IEEE_FLOAT)
+    {
+        this->adapter = std::make_unique<StaticAudioAdapter<float>>(this->waveFormat->nChannels);
+    }
+    else if (this->waveFormat->wFormatTag == WAVE_FORMAT_EXTENSIBLE)
+    {
+        WAVEFORMATEXTENSIBLE* waveFormatExtensible = reinterpret_cast<WAVEFORMATEXTENSIBLE*>(this->waveFormat.get());
+        if (waveFormatExtensible->SubFormat == KSDATAFORMAT_SUBTYPE_IEEE_FLOAT)
+        {
+            this->adapter = std::make_unique<StaticAudioAdapter<float>>(this->waveFormat->nChannels);
+        }
+        else
+        {
+            throw ComError(E_INVALIDARG, "unknown extensible audio format");
+        }
+    }
 }
 
-void AudioAnalyzer::Handle(const PCMAudioFrame* data, size_t count, DWORD flags)
+void AudioAnalyzer::Handle(const void* data, size_t count, DWORD flags)
 {
     // https://stackoverflow.com/questions/64158704/wasapi-captured-packets-do-not-align
     if (flags & AUDCLNT_BUFFERFLAGS_DATA_DISCONTINUITY)
     {
-        this->count = 0;
+        this->buffer.Reset();
         TRACE("discontinuity!");
     }
     if (flags & AUDCLNT_BUFFERFLAGS_SILENT)
@@ -41,34 +67,15 @@ void AudioAnalyzer::Handle(const PCMAudioFrame* data, size_t count, DWORD flags)
         TRACE("silent!");
     }
 
-    // In the case that the new data is longer than the window, start where there's only one window left
-    if (count > this->window)
-    {
-        data += count - this->window;
-        count = this->window;
-    }
-
-    // Write as ring
-    for (size_t i = 0; i < count; ++i)
-    {
-        this->buffer[(this->index + i) % this->window] = static_cast<float>(data[i].left);
-    }
-
-    // Update index and count
-    this->index = (this->index + count) % this->window;
-    this->count = std::min(this->count + count, this->window);
+    this->adapter->Write(this->buffer, data, count);
 }
 
 void AudioAnalyzer::Analyze()
 {
-#ifdef ORDER
-    auto end = std::copy(this->buffer.begin() + this->index, this->buffer.end(), this->ordered.begin());
-    std::copy(this->buffer.begin(), this->buffer.begin() + index, end);
-#endif
     this->fft.Execute();
 }
 
-const std::vector<FFTWFComplex>& AudioAnalyzer::Spectrum() const 
+const std::vector<FFTWFComplex>& AudioAnalyzer::Spectrum() const
 {
     return this->spectrum;
 }

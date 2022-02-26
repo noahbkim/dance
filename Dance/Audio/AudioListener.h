@@ -67,15 +67,9 @@ protected:
     /// @param count is the number of frames in the packet.
     /// @param flags contains information about discontinuities, silence, etc.
     /// @see AudioListener::Listen
-    virtual void Handle(const PCMAudioFrame* data, size_t count, DWORD flags) = 0;
+    virtual void Handle(const void* data, size_t count, DWORD flags) = 0;
 
 private:
     /// Whether the listener is enabled.
     bool listening = false;
-
-    /// Determine the best compatible wave format to use with the provided audio device. This method is pretty fragile
-    /// in its current state as I don't have a wide array of devices to test it with.
-    /// 
-    /// @returns the status result as reported by underlying audio client calls. May fail early.
-    HRESULT DetermineWaveFormat();
 };

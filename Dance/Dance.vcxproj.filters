@@ -125,6 +125,9 @@
     <ClInclude Include="Audio\AudioAnalyzer.h">
       <Filter>Project\Audio</Filter>
     </ClInclude>
+    <ClInclude Include="Common\Ring.h">
+      <Filter>Project\Common</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Main.cpp">

@@ -7,6 +7,8 @@
 #include "Graphics/Shader.h"
 #include "Mathematics/Mathematics.h"
 
+using Vertex = SimpleVertex::Structure;
+
 enum ConstantBufferSlot
 {
 	CONSTANT_BUFFER_CAMERA,
@@ -46,7 +48,7 @@ public:
 
 	/// Set the constant buffer, write our data, apply the shader, set and draw the vertices.
 	virtual void Render() {
-		this->constants.Set(CONSTANT_BUFFER_RENDERABLE, 1);
+		this->constants.Set(CONSTANT_BUFFER_RENDERABLE);
 		this->constants.Write();
 		this->shader.Apply();
 		this->vertices.Set();

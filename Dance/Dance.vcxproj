@@ -157,6 +157,7 @@
     <ClInclude Include="Audio\AudioAnalyzer.h" />
     <ClInclude Include="Audio\AudioListener.h" />
     <ClInclude Include="Common\Pointer.h" />
+    <ClInclude Include="Common\Ring.h" />
     <ClInclude Include="Common\Runtime.h" />
     <ClInclude Include="FFTW3\fftw3.h" />
     <ClInclude Include="Framework.h" />

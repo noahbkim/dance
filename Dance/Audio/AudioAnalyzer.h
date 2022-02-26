@@ -2,6 +2,7 @@
 
 #include "Framework.h"
 #include "AudioListener.h"
+#include "Common/Ring.h"
 
 #include "FFTW3/fftw3.h"
 // #pragma comment(lib, "FFTW3/libfftw3f-3.lib")
@@ -87,6 +88,39 @@ private:
 /// FFT. Unclear whether this is necessary. Maybe if I'd paid attention in complex I'd remember.
 // #define ORDER
 
+class AudioAdapter
+{
+public:
+    virtual void Write(Ring<float>& destination, const void* source, size_t count) = 0;
+};
+
+template<typename T>
+class StaticAudioAdapter : public AudioAdapter
+{
+public:
+    StaticAudioAdapter(size_t channels) : channels(channels) {}
+
+    virtual void Write(Ring<float>& destination, const void* source, size_t count)
+    {
+        const T* typed = reinterpret_cast<const T*>(source);
+
+        // In the case that the new data is longer than the window, start where there's only one window left
+        if (count > destination.Size())
+        {
+            typed += (count - destination.Size()) * this->channels;
+            count = destination.Size();
+        }
+
+        for (size_t i = 0; i < count; ++i)
+        {
+            destination.Write(static_cast<float>(typed[i * this->channels] * 65535));
+        }
+    }
+
+private:
+    size_t channels;
+};
+
 class AudioAnalyzer : public AudioListener
 {
 public:
@@ -107,7 +141,7 @@ public:
     /// @param data the PCM audio frame array recevied from the AudioClient.
     /// @param count the number of frames in the data blob.
     /// @param flags any additional flags yielded by the audio frame.
-    virtual void Handle(const PCMAudioFrame* data, size_t count, DWORD flags);
+    virtual void Handle(const void* data, size_t count, DWORD flags);
 
     /// Run the fftwf_plan on the data buffer we've been adding to in AudioAnalyzer::Handle.
     void Analyze();
@@ -121,23 +155,15 @@ protected:
     /// The number of audio frames to use for the FFT.
     size_t window{ 0 };
 
+    /// Audio adapter
+    std::unique_ptr<AudioAdapter> adapter;
+
     /// Initial buffer for the real samples that we'll run the FFT on.
-    std::vector<float> buffer;
-
-    /// Current index of where we are in the ring buffer.
-    size_t index{ 0 };
-
-    /// The number of continuous samples prior to the index.
-    size_t count{ 0 };
+    Ring<float> buffer;
 
     /// Precomputed FFT parameters and allocated memory.
     FFTWFPlan fft;
     
     /// A container for the result of the FFT.
     std::vector<FFTWFComplex> spectrum;
-
-    /// If we wish to order the contents of the ring buffer prior to running the FFT, preallocate that space.
-#ifdef ORDER
-    std::vector<float> ordered;
-#endif
 };
