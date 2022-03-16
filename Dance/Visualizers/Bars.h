@@ -92,13 +92,13 @@ public:
 			const FLOAT left = u * i;
 			stroke = {
 				std::round(left),
-				h - ((level / 500.0f)) / ((level / 500.0f) + 1) * h,
+				h - ((level * 65.0f)) / ((level * 65.0f) + 1) * h,
 				std::round(left + u),
 				h
 			};
 
 
-			brush->SetColor(rgb(std::max(360.0f, std::log(level) * 100.0f), 1.0f, 0.5f));
+			brush->SetColor(rgb(std::max(360.0f, std::log(level * 65535) * 100.0f), 1.0f, 0.5f));
 			context->FillRectangle(stroke, brush.Get());
 		}
 

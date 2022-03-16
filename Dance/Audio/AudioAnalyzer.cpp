@@ -25,11 +25,11 @@ AudioAnalyzer::AudioAnalyzer(ComPtr<IMMDevice> device, REFERENCE_TIME duration)
     {
         if (this->waveFormat->wBitsPerSample == 16)
         {
-            this->adapter = std::make_unique<StaticAudioAdapter<INT16>>(this->waveFormat->nChannels);
+            this->adapter = std::make_unique<StaticAudioAdapter<INT16>>(this->waveFormat->nChannels, INT16_MAX);
         }
         else if (this->waveFormat->wBitsPerSample == 32)
         {
-            this->adapter = std::make_unique<StaticAudioAdapter<INT32>>(this->waveFormat->nChannels);
+            this->adapter = std::make_unique<StaticAudioAdapter<INT32>>(this->waveFormat->nChannels, INT32_MAX);
         }
         else
         {
@@ -47,10 +47,18 @@ AudioAnalyzer::AudioAnalyzer(ComPtr<IMMDevice> device, REFERENCE_TIME duration)
         {
             this->adapter = std::make_unique<StaticAudioAdapter<float>>(this->waveFormat->nChannels);
         }
+        else if (waveFormatExtensible->SubFormat == KSDATAFORMAT_SUBTYPE_PCM)
+        {
+            this->adapter = std::make_unique<StaticAudioAdapter<INT16>>(this->waveFormat->nChannels, INT16_MAX);
+        }
         else
         {
             throw ComError(E_INVALIDARG, "unknown extensible audio format");
         }
+    }
+    else
+    {
+        throw ComError(E_INVALIDARG, "uknown audio format tag");
     }
 }
 

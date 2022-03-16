@@ -88,17 +88,36 @@ private:
 /// FFT. Unclear whether this is necessary. Maybe if I'd paid attention in complex I'd remember.
 // #define ORDER
 
+/// Superclass for a converter from an audio frame payload to a flat array of floats. The current visualizer 
+/// implementations expect values to range from 0.0 to 1.0.
 class AudioAdapter
 {
 public:
+    /// Write a payload of count frames into the destination ring.
+    /// 
+    /// @param destination is the buffer of floats we're writing the audio frames to.
+    /// @param source is an array of data subclasses should specialize to, determined by the audio analyzer.
+    /// @param count indicates how many frames are present in the source array.
     virtual void Write(Ring<float>& destination, const void* source, size_t count) = 0;
-};
+};  
 
+/// Statically casts between primitive value types. Provides normalization factor to divide integer audio
+/// frames into [0.0, 1.0] floating point values.
+/// 
+/// @typeparam T is the parameter we're casting our const void* source to.
 template<typename T>
 class StaticAudioAdapter : public AudioAdapter
 {
 public:
-    StaticAudioAdapter(size_t channels) : channels(channels) {}
+    /// A static audio adapter needs to know how many channels there are in each frame as well as an optional 
+    /// normalization factor. This adapter takes the first value in the frame, e.g. left in stereo audio.
+    /// 
+    /// @param channels is the number of values per frame.
+    /// @param normalize is a divisor for each sample as it's pushed into the destination. 
+    StaticAudioAdapter(size_t channels, float normalize = 1.0) 
+        : channels(channels)
+        , normalize(normalize) 
+    {}
 
     virtual void Write(Ring<float>& destination, const void* source, size_t count)
     {
@@ -113,12 +132,13 @@ public:
 
         for (size_t i = 0; i < count; ++i)
         {
-            destination.Write(static_cast<float>(typed[i * this->channels] * 65535));
+            destination.Write(static_cast<float>(typed[i * this->channels]) / this->normalize);
         }
     }
 
 private:
     size_t channels;
+    float normalize;
 };
 
 class AudioAnalyzer : public AudioListener

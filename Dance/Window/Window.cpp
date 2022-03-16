@@ -11,7 +11,6 @@ Window::Window
 	, windowClassName(windowClassName)
 	, windowTitle(windowTitle)
 {
-
 }
 
 Window::~Window()

@@ -58,7 +58,7 @@ LRESULT CALLBACK BorderlessWindow::Message(HWND windowHandle, UINT message, WPAR
 	case WM_NCHITTEST:
 		return this->HitTest(lParam);
 	default:
-		return ::DefWindowProcW(windowHandle, message, wParam, lParam);
+		return Window::Message(windowHandle, message, wParam, lParam);
 	}
 }
 
