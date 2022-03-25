@@ -101,16 +101,12 @@ LRESULT CALLBACK TransparentWindow::Message(HWND windowHandle, UINT message, WPA
 {
 	switch (message)
 	{
-	case WM_NCCALCSIZE:
-		return this->CalculateSize(wParam, lParam);
-	case WM_NCHITTEST:
-		return this->HitTest(lParam);
 	case WM_ENTERSIZEMOVE:
 		return this->StartResizeMove();
 	case WM_EXITSIZEMOVE:
 		return this->FinishResizeMove();
 	default:
-		return ::DefWindowProcW(windowHandle, message, wParam, lParam);
+        return BorderlessWindow::Message(windowHandle, message, wParam, lParam);
 	}
 }
 

@@ -30,6 +30,7 @@ public:
     /// @param wParam is the short value parameter.
     /// @param lParam is the long value parameter.
     /// @returns an LRESULT expected by the static callback, sometimes used as a response.
+    /// @seealso Window::Message.
     virtual LRESULT CALLBACK Message(HWND windowHandle, UINT message, WPARAM wParam, LPARAM lParam);
 
 protected:
