@@ -16,25 +16,6 @@ AudioListener::AudioListener(ComPtr<IMMDevice> device, REFERENCE_TIME duration) 
     this->audioClient->GetMixFormat(&waveFormat);
     this->waveFormat.reset(waveFormat);
     this->waveFormat->nChannels = 2;
-    
-    // For some reason we can't record subtype IEEE float
-    if (this->waveFormat->wFormatTag == WAVE_FORMAT_EXTENSIBLE)
-    {
-        WAVEFORMATEXTENSIBLE* waveFormatExtensible = reinterpret_cast<WAVEFORMATEXTENSIBLE*>(this->waveFormat.get());
-        if (waveFormatExtensible->SubFormat == KSDATAFORMAT_SUBTYPE_IEEE_FLOAT)
-        {
-            waveFormatExtensible->SubFormat = KSDATAFORMAT_SUBTYPE_PCM;
-            waveFormatExtensible->Format.wBitsPerSample = 16;
-            waveFormatExtensible->Format.nBlockAlign = (waveFormatExtensible->Format.wBitsPerSample / 8) * waveFormatExtensible->Format.nChannels;
-            waveFormatExtensible->Format.nAvgBytesPerSec = waveFormatExtensible->Format.nSamplesPerSec * waveFormatExtensible->Format.nBlockAlign;
-            waveFormatExtensible->Samples.wValidBitsPerSample = 16;
-        }
-    }
-
-    OKE(this->audioClient->IsFormatSupported(
-        AUDCLNT_SHAREMODE_EXCLUSIVE,
-        waveFormat,
-        nullptr));
 
     // Initialize the audio client and request the provided duration and determined wave format
     OKE(this->audioClient->Initialize(
