@@ -118,20 +118,19 @@ public:
 		this->dxgiSwapChain->Present(1, 0);
 	}
 
-	virtual void Update(float delta)
+	virtual void Update(double delta)
 	{
 		AudioVisualizer::Update(delta);
-
 		const size_t normalize = this->analyzer.Spectrum().size();
 
 		FLOAT level = 0.0f;
-		for (size_t i = 100; i < 600; ++i)
+		for (size_t i = 100; i < 1000; ++i)
 		{
 			level += this->analyzer.Spectrum()[i].magnitude(normalize);
 		}
 
 		this->theta += delta;
-		this->cube.Transform() = Matrix4F::Scale(1.0f)
+		this->cube.Transform() = Matrix4F::Scale(200.0f * level + 100.0f)
 			* Matrix4F::YRotation(this->theta)
 			* Matrix4F::XRotation(0.45f * this->theta)
 			* Matrix4F::ZRotation(0.85f * this->theta);

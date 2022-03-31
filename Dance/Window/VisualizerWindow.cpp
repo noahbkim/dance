@@ -33,7 +33,7 @@ Visualizer::Dependencies VisualizerWindow::Dependencies() const
 HRESULT VisualizerWindow::Create()
 {
 	TransparentWindow::Create();
-	this->visualizer = std::make_unique<BarsVisualizer>(this->Dependencies());
+	this->visualizer = std::make_unique<CubeVisualizer>(this->Dependencies());
 	return S_OK;
 }
 
