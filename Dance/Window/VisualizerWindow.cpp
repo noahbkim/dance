@@ -1,6 +1,8 @@
 #include "VisualizerWindow.h"
 
 static const int MENU_EXIT = 42;
+static const int MENU_BARS = 43;
+static const int MENU_CUBE = 44;
 static const MARGINS SHADOW_VISIBLE{ 1, 1, 1, 1 };
 static const MARGINS SHADOW_INVISIBLE{ 0, 0, 0, 0 };
 
@@ -31,8 +33,7 @@ Visualizer::Dependencies VisualizerWindow::Dependencies() const
 HRESULT VisualizerWindow::Create()
 {
 	TransparentWindow::Create();
-	this->visualizer = std::make_unique<BarsVisualizer>();
-	this->visualizer->Create(this->Dependencies());
+	this->visualizer = std::make_unique<BarsVisualizer>(this->Dependencies());
 	return S_OK;
 }
 
@@ -135,8 +136,20 @@ LRESULT VisualizerWindow::RightButtonDown(WPARAM wParam, LPARAM lParam)
 	HMENU menu = ::CreatePopupMenu();
 	BET(InsertMenu(
 		menu,
-		0, 
-		MF_BYPOSITION | MF_STRING, 
+		0,
+		MF_BYPOSITION | MF_STRING,
+		MENU_BARS,
+		L"Bars"));
+	BET(InsertMenu(
+		menu,
+		1,
+		MF_BYPOSITION | MF_STRING,
+		MENU_CUBE,
+		L"Cube"));
+	BET(InsertMenu(
+		menu,
+		2,
+		MF_BYPOSITION | MF_STRING,
 		MENU_EXIT,
 		L"Exit"));
 	BET(::SetForegroundWindow(this->window));
@@ -162,9 +175,23 @@ LRESULT VisualizerWindow::Command(WPARAM wParam, LPARAM lParam)
 		case MENU_EXIT:
 			::DestroyWindow(this->window);
 			return 0;
+		case MENU_BARS:
+			return this->Switch<BarsVisualizer>();
+		case MENU_CUBE:
+			return this->Switch<CubeVisualizer>();
 		}
 	}
 
+	return 0;
+}
+
+template<typename T>
+LRESULT VisualizerWindow::Switch()
+{
+	if (dynamic_cast<T*>(this->visualizer.get()) == nullptr)
+	{
+		this->visualizer = std::make_unique<T>(this->Dependencies());
+	}
 	return 0;
 }
 

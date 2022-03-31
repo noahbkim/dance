@@ -23,20 +23,17 @@ static inline D2D1::ColorF rgb(float h, float s, float l)
 class BarsVisualizer : public TwoVisualizer, public AudioVisualizer
 {
 public:
-	BarsVisualizer() : size{} {}
-
-	virtual HRESULT Create(const Visualizer::Dependencies& dependencies)
+	BarsVisualizer(const Visualizer::Dependencies& dependencies) 
+		: size{}
+		, TwoVisualizer(dependencies)
+		, AudioVisualizer(dependencies)
 	{
-		OK(TwoVisualizer::Create(dependencies));
-		OK(AudioVisualizer::Create(dependencies));
-
-		// Bounds of actual FFT spectrum we use
-
-
 		D2D1_COLOR_F const color = D2D1::ColorF(1.0f, 1.0f, 1.0f, 1.0f);
 		this->d2dDeviceContext->CreateSolidColorBrush(color, brush.GetAddressOf());
 
-		return S_OK;
+		RECT size;
+		::GetClientRect(dependencies.Window, &size);
+		this->Resize(size);
 	}
 
 	virtual HRESULT Unsize()
@@ -62,7 +59,6 @@ public:
 	virtual void Render()
 	{
 		auto context = this->d2dDeviceContext;
-		context->SetTarget(this->d2dBitmap.Get());
 		context->BeginDraw();
 		context->Clear();
 
@@ -97,7 +93,6 @@ public:
 				h
 			};
 
-
 			brush->SetColor(rgb(std::max(360.0f, std::log(level * 65535) * 100.0f), 1.0f, 0.5f));
 			context->FillRectangle(stroke, brush.Get());
 		}
@@ -112,13 +107,6 @@ public:
 	virtual void Update(double delta)
 	{
 		AudioVisualizer::Update(delta);
-	}
-
-	virtual HRESULT Destroy()
-	{
-		OK(TwoVisualizer::Destroy());
-		OK(AudioVisualizer::Destroy());
-		return S_OK;
 	}
 
 protected:

@@ -26,9 +26,6 @@ public:
 
     virtual ~Visualizer();
 
-    // Create the visualizer
-    virtual HRESULT Create(const Dependencies& dependencies) = 0;
-
     // Allocation and deallocation of size-dependent resources
     virtual HRESULT Unsize() = 0;
     virtual HRESULT Resize(const RECT& size) = 0;
@@ -36,17 +33,15 @@ public:
     // Runtime hooks
     virtual void Render() = 0;
     virtual void Update(double delta) = 0;
-
-    // Release all associated resources
-    virtual HRESULT Destroy() = 0;
 };
 
 class AudioVisualizer : public virtual Visualizer
 {
 public:
-    virtual HRESULT Create(const Dependencies& dependencies);
+    AudioVisualizer(const Dependencies& dependencies);
+    virtual ~AudioVisualizer();
+
     virtual void Update(double delta);
-    virtual HRESULT Destroy();
 
 protected:
     AudioAnalyzer analyzer;
@@ -55,10 +50,10 @@ protected:
 class TwoVisualizer : public virtual Visualizer
 {
 public:
-    virtual HRESULT Create(const Dependencies& dependencies);
+    TwoVisualizer(const Dependencies& dependencies);
+
     virtual HRESULT Unsize();
     virtual HRESULT Resize(const RECT& size);
-    virtual HRESULT Destroy();
 
 protected:
     ComPtr<IDXGISwapChain1> dxgiSwapChain;
@@ -76,7 +71,8 @@ protected:
 class ThreeVisualizer : public virtual Visualizer
 {
 public:
-    virtual HRESULT Create(const Dependencies& dependencies);
+    ThreeVisualizer(const Dependencies& dependencies);
+
     virtual HRESULT Unsize();
     virtual HRESULT Resize(const RECT& size);
 

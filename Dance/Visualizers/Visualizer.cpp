@@ -5,13 +5,17 @@ Visualizer::~Visualizer()
 
 }
 
-HRESULT AudioVisualizer::Create(const Visualizer::Dependencies& dependencies)
+AudioVisualizer::AudioVisualizer(const Visualizer::Dependencies& dependencies)
 {
     ComPtr<IMMDevice> device = getDefaultAudioDevice();
     TRACE("capturing " << getAudioDeviceFriendlyName(device.Get()));
     this->analyzer = AudioAnalyzer(device, ONE_SECOND / 20);
     this->analyzer.Enable();
-	return S_OK;
+}
+
+AudioVisualizer::~AudioVisualizer()
+{
+	this->analyzer.Disable();
 }
 
 void AudioVisualizer::Update(double delta)
@@ -22,30 +26,14 @@ void AudioVisualizer::Update(double delta)
     }
 }
 
-HRESULT AudioVisualizer::Destroy()
+TwoVisualizer::TwoVisualizer(const Dependencies& dependencies)
+	: d2dDevice(dependencies.D2dDevice)
+	, dxgiSwapChain(dependencies.DxgiSwapChain)
 {
-    this->analyzer.Disable();
-	return S_OK;
-}
-
-HRESULT TwoVisualizer::Create(const Dependencies& dependencies)
-{
-    this->d2dDevice = dependencies.D2dDevice;
-	this->dxgiSwapChain = dependencies.DxgiSwapChain;
-
-    OK(this->d2dDevice->CreateDeviceContext(
+    OKE(this->d2dDevice->CreateDeviceContext(
         D2D1_DEVICE_CONTEXT_OPTIONS_NONE,
         this->d2dDeviceContext.ReleaseAndGetAddressOf()));
-
-	return S_OK;
 }
-
-HRESULT TwoVisualizer::Destroy()
-{
-    this->d2dDeviceContext->SetTarget(nullptr);
-	return S_OK;
-}
-
 
 HRESULT TwoVisualizer::CreateSurface()
 {
@@ -100,15 +88,15 @@ HRESULT TwoVisualizer::Resize(const RECT& size)
 	// Recreate the DXGI surface and bind the bitmap that we releasesd prior
 	OK(this->CreateSurface());
 	OK(this->CreateBitmap());
+	this->d2dDeviceContext->SetTarget(this->d2dBitmap.Get());
 
 	return S_OK;
 }
 
-HRESULT ThreeVisualizer::Create(const Dependencies& dependencies)
+ThreeVisualizer::ThreeVisualizer(const Dependencies& dependencies)
+	: dxgiSwapChain(dependencies.DxgiSwapChain)
+	, d3dDevice(dependencies.D3dDevice)
 {
-	this->dxgiSwapChain = dependencies.DxgiSwapChain;
-	this->d3dDevice = dependencies.D3dDevice;
-
 	// https://docs.microsoft.com/en-us/windows/win32/direct2d/direct2d-and-direct3d-interoperation-overview
 	this->d3dDevice->GetImmediateContext(this->d3dDeviceContext.ReleaseAndGetAddressOf());
 
@@ -119,12 +107,9 @@ HRESULT ThreeVisualizer::Create(const Dependencies& dependencies)
 	descriptor.DepthFunc = D3D11_COMPARISON_LESS;
 	descriptor.StencilEnable = false;
 	ComPtr<ID3D11DepthStencilState> depthStencilState;
-	OK(this->d3dDevice->CreateDepthStencilState(&descriptor, depthStencilState.ReleaseAndGetAddressOf()));
+	OKE(this->d3dDevice->CreateDepthStencilState(&descriptor, depthStencilState.ReleaseAndGetAddressOf()));
 	this->d3dDeviceContext->OMSetDepthStencilState(depthStencilState.Get(), 0);
-
-	return S_OK;
 }
-
 
 HRESULT ThreeVisualizer::CreateRenderTarget()
 {

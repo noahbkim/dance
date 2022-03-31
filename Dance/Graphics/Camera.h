@@ -19,7 +19,7 @@ public:
 	{
 		Matrix4F ViewProjection;
 		Vector3F Position;
-		// float _pad;
+		float _pad;
 	};
 
 	/// Empty initialize a camera without making allocation.

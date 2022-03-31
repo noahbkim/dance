@@ -66,19 +66,19 @@ public:
 class CubeVisualizer : public ThreeVisualizer, public AudioVisualizer
 {
 public:
-	CubeVisualizer() : size{} {}
-
-	virtual HRESULT Create(const Visualizer::Dependencies& dependencies)
+	CubeVisualizer(const Visualizer::Dependencies& dependencies) 
+		: size{}
+		, ThreeVisualizer(dependencies)
+		, AudioVisualizer(dependencies)
 	{
-		OK(ThreeVisualizer::Create(dependencies));
-		OK(AudioVisualizer::Create(dependencies));
-
 		this->d3dDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 		this->cube = Cube(this->d3dDevice);
 		this->camera = Camera(this->d3dDevice, Matrix4F(), Matrix4F());
 		this->theta = 0.0f;
 
-		return S_OK;
+		RECT size;
+		::GetClientRect(dependencies.Window, &size);
+		this->Resize(size);
 	}
 
 	virtual HRESULT Unsize()
@@ -131,16 +131,10 @@ public:
 		}
 
 		this->theta += delta;
-		this->cube.Transform() = Matrix4F::Scale(40 * std::logf(level / 100))
+		this->cube.Transform() = Matrix4F::Scale(1.0f)
 			* Matrix4F::YRotation(this->theta)
 			* Matrix4F::XRotation(0.45f * this->theta)
 			* Matrix4F::ZRotation(0.85f * this->theta);
-	}
-
-	virtual HRESULT Destroy()
-	{
-		OK(AudioVisualizer::Destroy());
-		return S_OK;
 	}
 
 protected:

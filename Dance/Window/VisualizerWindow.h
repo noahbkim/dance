@@ -33,5 +33,8 @@ protected:
     LRESULT RightButtonDown(WPARAM wParam, LPARAM lParam);
     LRESULT Command(WPARAM wParam, LPARAM lParam);
 
+    template<typename T>
+    LRESULT Switch();
+
     std::unique_ptr<Visualizer> visualizer;
 };
