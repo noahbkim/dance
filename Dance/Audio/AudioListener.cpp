@@ -15,7 +15,11 @@ AudioListener::AudioListener(ComPtr<IMMDevice> device, REFERENCE_TIME duration) 
     WAVEFORMATEX* waveFormat;
     this->audioClient->GetMixFormat(&waveFormat);
     this->waveFormat.reset(waveFormat);
+
+    // Force down to two channels
     this->waveFormat->nChannels = 2;
+    this->waveFormat->nBlockAlign = this->waveFormat->wBitsPerSample / 8 * 2;
+    this->waveFormat->nAvgBytesPerSec = this->waveFormat->nSamplesPerSec * waveFormat->nBlockAlign;
 
     // Initialize the audio client and request the provided duration and determined wave format
     OKE(this->audioClient->Initialize(
