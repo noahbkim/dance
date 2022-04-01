@@ -121,3 +121,5 @@ protected:
 
 	ComPtr<ID2D1SolidColorBrush> brush;
 };
+
+REGISTER(Bars, BarsVisualizer);

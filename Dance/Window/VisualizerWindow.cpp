@@ -1,8 +1,6 @@
 #include "VisualizerWindow.h"
 
-static const int MENU_EXIT = 42;
-static const int MENU_BARS = 43;
-static const int MENU_CUBE = 44;
+static const WORD MENU_EXIT = -1;
 static const MARGINS SHADOW_VISIBLE{ 1, 1, 1, 1 };
 static const MARGINS SHADOW_INVISIBLE{ 0, 0, 0, 0 };
 
@@ -33,7 +31,7 @@ Visualizer::Dependencies VisualizerWindow::Dependencies() const
 HRESULT VisualizerWindow::Create()
 {
 	TransparentWindow::Create();
-	this->visualizer = std::make_unique<CubeVisualizer>(this->Dependencies());
+	this->Switch(0);
 	return S_OK;
 }
 
@@ -134,24 +132,22 @@ LRESULT VisualizerWindow::MouseLeave(WPARAM wParam, LPARAM lParam)
 LRESULT VisualizerWindow::RightButtonDown(WPARAM wParam, LPARAM lParam)
 {
 	HMENU menu = ::CreatePopupMenu();
-	BET(InsertMenu(
+	for (const VisualizerRegistry::Entry& entry : VisualizerRegistry::Entries())
+	{
+		BET(AppendMenu(
+			menu,
+			MF_BYPOSITION | MF_STRING | (this->visualizerIndex == entry.Index ? MF_CHECKED | MF_DISABLED : 0),
+			entry.Index,
+			entry.Name.data()));
+	}
+
+	// Exit
+	BET(AppendMenu(
 		menu,
-		0,
-		MF_BYPOSITION | MF_STRING,
-		MENU_BARS,
-		L"Bars"));
-	BET(InsertMenu(
-		menu,
-		1,
-		MF_BYPOSITION | MF_STRING,
-		MENU_CUBE,
-		L"Cube"));
-	BET(InsertMenu(
-		menu,
-		2,
 		MF_BYPOSITION | MF_STRING,
 		MENU_EXIT,
 		L"Exit"));
+
 	BET(::SetForegroundWindow(this->window));
 	BET(::TrackPopupMenu(
 		menu,
@@ -170,28 +166,26 @@ LRESULT VisualizerWindow::Command(WPARAM wParam, LPARAM lParam)
 	// If from menu
 	if (HIWORD(wParam) == 0)
 	{
-		switch (LOWORD(wParam))
+		WORD index = LOWORD(wParam);
+		if (index == MENU_EXIT)
 		{
-		case MENU_EXIT:
 			::DestroyWindow(this->window);
 			return 0;
-		case MENU_BARS:
-			return this->Switch<BarsVisualizer>();
-		case MENU_CUBE:
-			return this->Switch<CubeVisualizer>();
+		}
+		else
+		{
+			return this->Switch(index);
 		}
 	}
 
 	return 0;
 }
 
-template<typename T>
-LRESULT VisualizerWindow::Switch()
+LRESULT VisualizerWindow::Switch(size_t index)
 {
-	if (dynamic_cast<T*>(this->visualizer.get()) == nullptr)
-	{
-		this->visualizer = std::make_unique<T>(this->Dependencies());
-	}
+	const VisualizerRegistry::Entry entry = VisualizerRegistry::Entries().at(index);
+	this->visualizer = entry.New(this->Dependencies());
+	this->visualizerIndex = entry.Index;
 	return 0;
 }
 

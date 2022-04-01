@@ -6,6 +6,7 @@
 #include "Audio/Device.h"
 #include "Audio/AudioAnalyzer.h"
  
+#include <functional>
 #include <vector>
 
 class Visualizer
@@ -34,6 +35,50 @@ public:
     virtual void Render() = 0;
     virtual void Update(double delta) = 0;
 };
+
+class VisualizerRegistry
+{
+public:
+    struct Entry
+    {
+        using Factory = std::function<std::unique_ptr<Visualizer>(const Visualizer::Dependencies&)>;
+
+        size_t Index;
+        std::wstring Name;
+        Factory New;
+
+        Entry(size_t index, const std::wstring& name, Factory factory)
+            : Index(index)
+            , Name(name)
+            , New(factory) {}
+    };
+
+    template<typename T>
+    static size_t Register(const std::wstring& name)
+    {
+        std::vector<Entry>& entries = VisualizerRegistry::entries();
+        size_t index = entries.size();
+        entries.emplace_back(
+            index, 
+            name, 
+            [](const Visualizer::Dependencies& dependencies) { return std::make_unique<T>(dependencies); });
+        return index;
+    }
+
+    static const std::vector<Entry>& Entries()
+    {
+        return VisualizerRegistry::entries();
+    }
+
+private:
+    static std::vector<Entry>& entries()
+    {
+        static std::vector<Entry> entries;
+        return entries;
+    }
+};
+
+#define REGISTER(name, type) static int _##name##_index = VisualizerRegistry::Register<type>(L#name);
 
 class AudioVisualizer : public virtual Visualizer
 {

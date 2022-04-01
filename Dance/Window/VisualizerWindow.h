@@ -3,6 +3,7 @@
 #include "Framework.h"
 #include "TransparentWindow.h"
 #include "Common/Runtime.h"
+#include "Visualizers/Visualizer.h"
 #include "Visualizers/Bars.h"
 #include "Visualizers/Cube.h"
 
@@ -33,8 +34,8 @@ protected:
     LRESULT RightButtonDown(WPARAM wParam, LPARAM lParam);
     LRESULT Command(WPARAM wParam, LPARAM lParam);
 
-    template<typename T>
-    LRESULT Switch();
+    LRESULT Switch(size_t index);
 
     std::unique_ptr<Visualizer> visualizer;
+    size_t visualizerIndex;
 };

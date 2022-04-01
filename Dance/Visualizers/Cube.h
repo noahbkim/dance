@@ -171,3 +171,5 @@ protected:
 		return S_OK;
 	}
 };
+
+REGISTER(Cube, CubeVisualizer);
