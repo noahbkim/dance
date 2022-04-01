@@ -79,11 +79,11 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\Plugins\</OutDir>
+    <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\Visualizers\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\Plugins\</OutDir>
+    <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\Visualizers\</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -154,6 +154,14 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\Cube.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\Libraries\Audio\Audio.vcxproj">
+      <Project>{ea5d8dfe-2398-4d43-a635-a89a49ed0a80}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Libraries\Three\Three.vcxproj">
+      <Project>{fc7a4e81-0b39-4547-9bfc-23193941f0ba}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

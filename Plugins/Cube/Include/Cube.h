@@ -183,3 +183,16 @@ protected:
 		return S_OK;
 	}
 };
+
+extern "C"
+{
+	__declspec(dllexport) Visualizer* Factory(const Visualizer::Dependencies& dependencies)
+	{
+		return new CubeVisualizer(dependencies);
+	}
+
+	__declspec(dllexport) std::wstring Name()
+	{
+		return L"Cube";
+	}
+}

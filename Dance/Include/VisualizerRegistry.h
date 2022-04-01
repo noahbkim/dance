@@ -2,6 +2,7 @@
 
 #include <functional>
 #include <vector>
+#include <filesystem>
 
 #include "Visualizer.h"
 
@@ -58,7 +59,23 @@ public:
 
     static HRESULT Load()
     {
-        VisualizerRegistry::Load(L"Plugins\\Bars.dll");
+
+        std::wstring moduleFileName;
+        moduleFileName.resize(MAX_PATH);
+        ::GetModuleFileName(nullptr, moduleFileName.data(), moduleFileName.size());
+        moduleFileName.shrink_to_fit();
+
+        std::filesystem::path executableDirectory = std::filesystem::path(moduleFileName).parent_path();
+        for (const auto& item : std::filesystem::directory_iterator{ executableDirectory / "Visualizers"})
+        {
+            std::wstring itemPath = item.path().wstring();
+            if (itemPath.rfind(L".dll") != std::string::npos)
+            {
+                TRACE(itemPath);
+                VisualizerRegistry::Load(std::wstring(itemPath));
+            }
+        }
+
         return S_OK;
     }
 
