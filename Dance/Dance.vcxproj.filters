@@ -5,161 +5,41 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="Project">
-      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
-      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{ebf362ed-0a9b-4a5a-b9d7-6facc546ecd8}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Project\Audio">
-      <UniqueIdentifier>{996a9cc4-0e44-46ed-9e1e-10bc40b6d667}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Project\Common">
-      <UniqueIdentifier>{42b25833-1993-416c-a920-52fa8c03eea5}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Project\FFTW3">
-      <UniqueIdentifier>{19a4296f-39cf-46fe-8e22-7b7f5d454ca0}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Project\Graphics">
-      <UniqueIdentifier>{e0067331-cf46-46e9-a231-029dc02af0c0}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Project\Visualizers">
-      <UniqueIdentifier>{484ee991-b38c-45b0-9df5-36b44e2289e8}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Project\Window">
-      <UniqueIdentifier>{ba04540a-6ae6-4497-8caa-fb4e51c0c165}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Project\Mathematics">
-      <UniqueIdentifier>{d72f00f8-3dd5-49b9-8006-56049ded7dc3}</UniqueIdentifier>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{2ef0525b-bd31-443c-9e6f-8b0e7966f86b}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Framework.h">
-      <Filter>Project</Filter>
+    <ClInclude Include="Include\BorderlessWindow.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="TargetVersion.h">
-      <Filter>Project</Filter>
+    <ClInclude Include="Include\Framework.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Resource.h">
-      <Filter>Project</Filter>
+    <ClInclude Include="Include\Runtime.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Audio\Audio.h">
-      <Filter>Project\Audio</Filter>
+    <ClInclude Include="Include\TransparentWindow.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Visualizers\Bars.h">
-      <Filter>Project\Visualizers</Filter>
+    <ClInclude Include="Include\VisualizerWindow.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Graphics\Buffer.h">
-      <Filter>Project\Graphics</Filter>
+    <ClInclude Include="Include\Window.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Graphics\Camera.h">
-      <Filter>Project\Graphics</Filter>
+    <ClInclude Include="Include\Resource.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Visualizers\Cube.h">
-      <Filter>Project\Visualizers</Filter>
+    <ClInclude Include="Include\VisualizerRegistry.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Graphics\d3dx12.h">
-      <Filter>Project\Graphics</Filter>
+    <ClInclude Include="Include\Target.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Graphics\Graphics.h">
-      <Filter>Project\Graphics</Filter>
-    </ClInclude>
-    <ClInclude Include="Common\Pointer.h">
-      <Filter>Project\Common</Filter>
-    </ClInclude>
-    <ClInclude Include="Common\Runtime.h">
-      <Filter>Project\Common</Filter>
-    </ClInclude>
-    <ClInclude Include="Graphics\Primitive.h">
-      <Filter>Project\Graphics</Filter>
-    </ClInclude>
-    <ClInclude Include="Graphics\Shader.h">
-      <Filter>Project\Graphics</Filter>
-    </ClInclude>
-    <ClInclude Include="Graphics\Renderable.h">
-      <Filter>Project\Graphics</Filter>
-    </ClInclude>
-    <ClInclude Include="Visualizers\Visualizer.h">
-      <Filter>Project\Visualizers</Filter>
-    </ClInclude>
-    <ClInclude Include="Window\Window.h">
-      <Filter>Project\Window</Filter>
-    </ClInclude>
-    <ClInclude Include="FFTW3\fftw3.h">
-      <Filter>Project\FFTW3</Filter>
-    </ClInclude>
-    <ClInclude Include="Mathematics\Mathematics.h">
-      <Filter>Project\Mathematics</Filter>
-    </ClInclude>
-    <ClInclude Include="Mathematics\Matrix3.h">
-      <Filter>Project\Mathematics</Filter>
-    </ClInclude>
-    <ClInclude Include="Mathematics\Matrix4.h">
-      <Filter>Project\Mathematics</Filter>
-    </ClInclude>
-    <ClInclude Include="Mathematics\Quaternion.h">
-      <Filter>Project\Mathematics</Filter>
-    </ClInclude>
-    <ClInclude Include="Mathematics\Vector2.h">
-      <Filter>Project\Mathematics</Filter>
-    </ClInclude>
-    <ClInclude Include="Mathematics\Vector3.h">
-      <Filter>Project\Mathematics</Filter>
-    </ClInclude>
-    <ClInclude Include="Mathematics\Vector4.h">
-      <Filter>Project\Mathematics</Filter>
-    </ClInclude>
-    <ClInclude Include="Mathematics\Utility.h">
-      <Filter>Project\Mathematics</Filter>
-    </ClInclude>
-    <ClInclude Include="Window\BorderlessWindow.h">
-      <Filter>Project\Window</Filter>
-    </ClInclude>
-    <ClInclude Include="Window\TransparentWindow.h">
-      <Filter>Project\Window</Filter>
-    </ClInclude>
-    <ClInclude Include="Window\VisualizerWindow.h">
-      <Filter>Project\Window</Filter>
-    </ClInclude>
-    <ClInclude Include="Audio\AudioListener.h">
-      <Filter>Project\Audio</Filter>
-    </ClInclude>
-    <ClInclude Include="Audio\AudioAnalyzer.h">
-      <Filter>Project\Audio</Filter>
-    </ClInclude>
-    <ClInclude Include="Common\Ring.h">
-      <Filter>Project\Common</Filter>
-    </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="Main.cpp">
-      <Filter>Project</Filter>
-    </ClCompile>
-    <ClCompile Include="Visualizers\Visualizer.cpp">
-      <Filter>Project\Visualizers</Filter>
-    </ClCompile>
-    <ClCompile Include="Audio\Audio.cpp">
-      <Filter>Project\Audio</Filter>
-    </ClCompile>
-    <ClCompile Include="Window\Window.cpp">
-      <Filter>Project\Window</Filter>
-    </ClCompile>
-    <ClCompile Include="Common\Runtime.cpp">
-      <Filter>Project\Common</Filter>
-    </ClCompile>
-    <ClCompile Include="Window\BorderlessWindow.cpp">
-      <Filter>Project\Window</Filter>
-    </ClCompile>
-    <ClCompile Include="Window\TransparentWindow.cpp">
-      <Filter>Project\Window</Filter>
-    </ClCompile>
-    <ClCompile Include="Window\VisualizerWindow.cpp">
-      <Filter>Project\Window</Filter>
-    </ClCompile>
-    <ClCompile Include="Audio\AudioListener.cpp">
-      <Filter>Project\Audio</Filter>
-    </ClCompile>
-    <ClCompile Include="Audio\AudioAnalyzer.cpp">
-      <Filter>Project\Audio</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Dance.rc">
@@ -176,5 +56,25 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Macros.hint" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Source\BorderlessWindow.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Runtime.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\TransparentWindow.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\VisualizerWindow.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Window.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
