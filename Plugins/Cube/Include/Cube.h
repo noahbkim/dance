@@ -62,10 +62,10 @@ class Cube : public Renderable
 public:
 	Cube() : Renderable() {}
 
-	Cube(ComPtr<ID3D11Device> device) : Renderable(device) 
+	Cube(ComPtr<ID3D11Device> device, const std::wstring& shaderPath) : Renderable(device)
 	{
 		this->vertices = IndexedVertexBuffer(device, lengthof(VERTICES), VERTICES, lengthof(INDICES), INDICES);
-		this->shader = Shader(device, L"Shader/Mesh.hlsl", SimpleVertex::LAYOUT, lengthof(SimpleVertex::LAYOUT));
+		this->shader = Shader(device, shaderPath.c_str(), SimpleVertex::LAYOUT, lengthof(SimpleVertex::LAYOUT));
 	}
 };
 
@@ -78,13 +78,14 @@ enum ConstantBufferSlot
 class CubeVisualizer : public Dance::Three::ThreeVisualizer, public Dance::Audio::AudioVisualizer
 {
 public:
-	CubeVisualizer(const Visualizer::Dependencies& dependencies) 
-		: size{}
+	CubeVisualizer(const Visualizer::Dependencies& dependencies, const std::filesystem::path& path) 
+		: path(path)
+		, size{}
 		, ThreeVisualizer(dependencies)
 		, AudioVisualizer(dependencies)
 	{
 		this->d3dDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-		this->cube = Cube(this->d3dDevice);
+		this->cube = Cube(this->d3dDevice, (this->path.parent_path() / "Shader" / "Mesh.hlsl").wstring());
 		this->camera = Camera(this->d3dDevice, Matrix4F(), Matrix4F());
 		this->theta = 0.0f;
 
@@ -149,6 +150,7 @@ public:
 	}
 
 protected:
+	std::filesystem::path path;
 	RECT size;
 	Cube cube;
 	Camera camera;
@@ -186,9 +188,9 @@ protected:
 
 extern "C"
 {
-	__declspec(dllexport) Visualizer* Factory(const Visualizer::Dependencies& dependencies)
+	__declspec(dllexport) Visualizer* Factory(const Visualizer::Dependencies& dependencies, const std::filesystem::path& path)
 	{
-		return new CubeVisualizer(dependencies);
+		return new CubeVisualizer(dependencies, path);
 	}
 
 	__declspec(dllexport) std::wstring Name()

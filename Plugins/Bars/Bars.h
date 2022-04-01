@@ -126,7 +126,7 @@ protected:
 
 extern "C"
 {
-	__declspec(dllexport) Visualizer* Factory(const Visualizer::Dependencies& dependencies)
+	__declspec(dllexport) Visualizer* Factory(const Visualizer::Dependencies& dependencies, const std::filesystem::path& path)
 	{
 		return new BarsVisualizer(dependencies);
 	}

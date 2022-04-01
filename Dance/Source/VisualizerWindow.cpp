@@ -183,8 +183,8 @@ LRESULT VisualizerWindow::Command(WPARAM wParam, LPARAM lParam)
 
 LRESULT VisualizerWindow::Switch(size_t index)
 {
-	const VisualizerRegistry::Entry entry = VisualizerRegistry::Entries().at(index);
-	this->visualizer = std::unique_ptr<Visualizer>(entry.Factory(this->Dependencies()));
+	const VisualizerRegistry::Entry& entry = VisualizerRegistry::Entries().at(index);
+	this->visualizer = entry.Create(this->Dependencies());
 	this->visualizerIndex = entry.Index;
 	return 0;
 }

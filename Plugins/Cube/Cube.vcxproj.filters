@@ -9,6 +9,9 @@
       <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
       <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
     </Filter>
+    <Filter Include="Shader Files">
+      <UniqueIdentifier>{2265a0cc-075b-4449-9c13-dfe02a681982}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Include\Cube.h">
@@ -19,5 +22,13 @@
     <ClCompile Include="Source\Cube.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Shader\Constants.hlsl">
+      <Filter>Shader Files</Filter>
+    </None>
+    <None Include="Shader\Mesh.hlsl">
+      <Filter>Shader Files</Filter>
+    </None>
   </ItemGroup>
 </Project>
