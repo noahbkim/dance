@@ -6,35 +6,39 @@
 #include "Visualizer.h"
 #include "VisualizerRegistry.h"
 
-class VisualizerWindow : public TransparentWindow, public Runtime
+namespace Dance::Application
 {
-public:
-    VisualizerWindow(InstanceHandle instance, std::wstring windowClassName, std::wstring windowTitle);
+    class VisualizerWindow : public TransparentWindow, public Runtime
+    {
+    public:
+        VisualizerWindow(InstanceHandle instance, std::wstring windowClassName, std::wstring windowTitle);
 
-    virtual Visualizer::Dependencies Dependencies() const;
+        virtual Visualizer::Dependencies Dependencies() const;
 
-    virtual HRESULT Create();
-    virtual LRESULT CALLBACK Message(HWND windowHandle, UINT message, WPARAM wParam, LPARAM lParam);
+        virtual HRESULT Create();
+        virtual LRESULT CALLBACK Message(HWND windowHandle, UINT message, WPARAM wParam, LPARAM lParam);
 
-    void Render();
-    void Update(double delta);
+        void Render();
+        void Update(double delta);
 
-    LRESULT Close();
+        LRESULT Close();
 
-protected:
-    bool isMouseHovering = false;
-    bool isMouseTracking = false;
+    protected:
+        bool isMouseHovering = false;
+        bool isMouseTracking = false;
 
-    virtual HRESULT Resize();
+        virtual HRESULT Resize();
 
-    LRESULT MouseMove(WPARAM wParam, LPARAM lParam);
-    LRESULT MouseHover(WPARAM wParam, LPARAM lParam);
-    LRESULT MouseLeave(WPARAM wParam, LPARAM lParam);
-    LRESULT RightButtonDown(WPARAM wParam, LPARAM lParam);
-    LRESULT Command(WPARAM wParam, LPARAM lParam);
+        LRESULT MouseMove(WPARAM wParam, LPARAM lParam);
+        LRESULT MouseHover(WPARAM wParam, LPARAM lParam);
+        LRESULT MouseLeave(WPARAM wParam, LPARAM lParam);
+        LRESULT RightButtonDown(WPARAM wParam, LPARAM lParam);
+        LRESULT Command(WPARAM wParam, LPARAM lParam);
 
-    LRESULT Switch(size_t index);
+        LRESULT Switch(size_t index);
 
-    std::unique_ptr<Visualizer> visualizer;
-    size_t visualizerIndex;
-};
+        VisualizerRegistry registry;
+        std::unique_ptr<Visualizer> visualizer;
+        size_t index;
+    };
+}

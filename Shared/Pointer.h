@@ -18,3 +18,15 @@ struct CoTaskDeleter
 
 /// Include this because we use it everywhere.
 using Microsoft::WRL::ComPtr;
+
+struct LibraryDeleter
+{
+	using Pointer = HMODULE;
+
+	void operator()(HMODULE instance) const
+	{
+		::FreeLibrary(instance);
+	}
+};
+
+using LibraryHandle = std::unique_ptr<HINSTANCE__, LibraryDeleter>;

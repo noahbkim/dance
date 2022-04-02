@@ -20,26 +20,26 @@ int APIENTRY wWinMain(
     UNREFERENCED_PARAMETER(commandLine);
 
     WCHAR szWindowTitle[MAX_LOADED_STRING_LENGTH];
-    LoadStringW(instance, IDS_APP_TITLE, szWindowTitle, MAX_LOADED_STRING_LENGTH);
+    ::LoadStringW(instance, IDS_APP_TITLE, szWindowTitle, MAX_LOADED_STRING_LENGTH);
 
     GUARD(::CoInitializeEx(nullptr, COINITBASE_MULTITHREADED), result) {
         TRACE("failed to initialize threading model: " << result);
         return result;
     }
 
-    VisualizerWindow window(instance, L"VisualizerWindow", L"Dance");
+    Dance::Application::VisualizerWindow window(instance, L"VisualizerWindow", L"Dance");
     OK(window.Create());
     OK(window.Position(100, 100, 480, 480, SWP_FRAMECHANGED));
     OK(window.Prepare(showCommand));
 
-    HACCEL acceleratorTable = LoadAccelerators(instance, MAKEINTRESOURCE(IDC_DANCE));
+    HACCEL acceleratorTable = ::LoadAccelerators(instance, MAKEINTRESOURCE(IDC_DANCE));
     MSG message;
-    while (GetMessage(&message, nullptr, 0, 0))
+    while (::GetMessage(&message, nullptr, 0, 0))
     {
-        if (!TranslateAccelerator(message.hwnd, acceleratorTable, &message))
+        if (!::TranslateAccelerator(message.hwnd, acceleratorTable, &message))
         {
             ::TranslateMessage(&message);
-            DispatchMessage(&message);
+            ::DispatchMessage(&message);
         }
 
         window.Tick();

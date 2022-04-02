@@ -156,6 +156,7 @@
   <ItemGroup>
     <ClInclude Include="Include\BorderlessWindow.h" />
     <ClInclude Include="Include\Framework.h" />
+    <ClInclude Include="Include\Library.h" />
     <ClInclude Include="Include\Resource.h" />
     <ClInclude Include="Include\Runtime.h" />
     <ClInclude Include="Include\Target.h" />
@@ -179,6 +180,7 @@
     <ClCompile Include="Source\Main.cpp" />
     <ClCompile Include="Source\Runtime.cpp" />
     <ClCompile Include="Source\TransparentWindow.cpp" />
+    <ClCompile Include="Source\VisualizerRegistry.cpp" />
     <ClCompile Include="Source\VisualizerWindow.cpp" />
     <ClCompile Include="Source\Window.cpp" />
   </ItemGroup>

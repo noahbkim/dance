@@ -17,5 +17,6 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Macro.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Pointer.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Visualizer.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Width.h" />
   </ItemGroup>
 </Project>

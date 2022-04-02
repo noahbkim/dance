@@ -25,12 +25,6 @@
     <ClCompile Include="Source\AudioVisualizer.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Resources\libfftw3f-3.dll" />
-  </ItemGroup>
-  <ItemGroup>
-    <Library Include="Resources\libfftw3f-3.lib" />
-  </ItemGroup>
-  <ItemGroup>
     <ClInclude Include="Include\Audio.h" />
     <ClInclude Include="Include\AudioAnalyzer.h" />
     <ClInclude Include="Include\AudioListener.h" />
@@ -38,6 +32,22 @@
     <ClInclude Include="Include\Common.h" />
     <ClInclude Include="Include\fftw3.h" />
     <ClInclude Include="Include\Ring.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Library Include="libfftw3f-3.lib">
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</DeploymentContent>
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</DeploymentContent>
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</DeploymentContent>
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</DeploymentContent>
+    </Library>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="libfftw3f-3.dll">
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</DeploymentContent>
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</DeploymentContent>
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</DeploymentContent>
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</DeploymentContent>
+    </None>
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
@@ -100,9 +110,11 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
+    <CopyLocalDeploymentContent>true</CopyLocalDeploymentContent>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
+    <CopyLocalDeploymentContent>true</CopyLocalDeploymentContent>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -118,7 +130,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <Lib>
-      <AdditionalDependencies>$(ProjectDir)\Resources\libfftw3f-3.lib</AdditionalDependencies>
+      <AdditionalDependencies>$(ProjectDir)\libfftw3f-3.lib</AdditionalDependencies>
     </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -139,7 +151,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <Lib>
-      <AdditionalDependencies>$(ProjectDir)\Resources\libfftw3f-3.lib</AdditionalDependencies>
+      <AdditionalDependencies>$(ProjectDir)\libfftw3f-3.lib</AdditionalDependencies>
     </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -156,7 +168,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <Lib>
-      <AdditionalDependencies>$(ProjectDir)\Resources\libfftw3f-3.lib</AdditionalDependencies>
+      <AdditionalDependencies>$(ProjectDir)\libfftw3f-3.lib</AdditionalDependencies>
     </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -177,7 +189,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <Lib>
-      <AdditionalDependencies>$(ProjectDir)\Resources\libfftw3f-3.lib</AdditionalDependencies>
+      <AdditionalDependencies>$(ProjectDir)\libfftw3f-3.lib</AdditionalDependencies>
     </Lib>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

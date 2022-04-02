@@ -44,14 +44,14 @@ public:
     virtual void Update(double delta) = 0;
 
     // Import types
-    typedef Visualizer* (__cdecl* New)(const Visualizer::Dependencies&, const std::filesystem::path&);
-    typedef std::wstring(__cdecl* Name)();
+    typedef Visualizer* (__cdecl Factory)(const Visualizer::Dependencies&, const std::filesystem::path&);
+    typedef std::wstring(__cdecl Name)();
 };
 
 #define VISUALIZER(name, type) \
 extern "C" \
 { \
-    __declspec(dllexport) Visualizer* New(const Visualizer::Dependencies& dependencies, const std::filesystem::path& path) \
+    __declspec(dllexport) Visualizer* Factory(const Visualizer::Dependencies& dependencies, const std::filesystem::path& path) \
     { \
         return new type(dependencies, path); \
     } \
