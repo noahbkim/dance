@@ -14,39 +14,43 @@
 
 #include <string>
 #include <filesystem>
+#include <functional>
 
-class Visualizer
+namespace Dance::API
 {
-public:
-    // What we expect to be passed to the creation function
-    struct Dependencies
+    class Visualizer
     {
-        // Window
-        HINSTANCE Instance;
-        HWND Window;
+    public:
+        // What we expect to be passed to the creation function
+        struct Dependencies
+        {
+            // Window
+            HINSTANCE Instance;
+            HWND Window;
 
-        // TransparentWindow
-        Microsoft::WRL::ComPtr<ID3D11Device> D3dDevice;
-        Microsoft::WRL::ComPtr<IDXGIDevice> DxgiDevice;
-        Microsoft::WRL::ComPtr<IDXGISwapChain1> DxgiSwapChain;
-        Microsoft::WRL::ComPtr<ID2D1Device1> D2dDevice;
+            // TransparentWindow
+            Microsoft::WRL::ComPtr<ID3D11Device> D3dDevice;
+            Microsoft::WRL::ComPtr<IDXGIDevice> DxgiDevice;
+            Microsoft::WRL::ComPtr<IDXGISwapChain1> DxgiSwapChain;
+            Microsoft::WRL::ComPtr<ID2D1Device1> D2dDevice;
+        };
+
+        // Make destructor virtual for children classes.
+        virtual ~Visualizer() {}
+
+        // Allocation and deallocation of size-dependent resources
+        virtual HRESULT Unsize() = 0;
+        virtual HRESULT Resize(const RECT& size) = 0;
+
+        // Runtime hooks
+        virtual void Render() = 0;
+        virtual void Update(double delta) = 0;
     };
 
-    // Make destructor virtual for children classes.
-    virtual ~Visualizer() {}
-
-    // Allocation and deallocation of size-dependent resources
-    virtual HRESULT Unsize() = 0;
-    virtual HRESULT Resize(const RECT& size) = 0;
-
-    // Runtime hooks
-    virtual void Render() = 0;
-    virtual void Update(double delta) = 0;
-
     // Import types
-    typedef Visualizer* (__cdecl Factory)(const Visualizer::Dependencies&, const std::filesystem::path&);
-    typedef std::wstring(__cdecl Name)();
-};
+    using Factory = Visualizer* __cdecl(const Visualizer::Dependencies&, const std::filesystem::path&);
+    using Name = std::wstring __cdecl();
+}
 
 #define VISUALIZER(name, type) \
 extern "C" \
@@ -57,6 +61,6 @@ extern "C" \
     } \
     __declspec(dllexport) std::wstring Name() \
     { \
-        return L#name; \
+        return name; \
     } \
 }

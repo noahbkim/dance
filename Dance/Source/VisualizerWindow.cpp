@@ -14,6 +14,7 @@ namespace Dance::Application
 	)
 		: TransparentWindow(instance, windowClassName, windowTitle)
 		, Runtime()
+		, index(0)
 	{
 
 	}
@@ -105,7 +106,7 @@ namespace Dance::Application
 			tracking.dwFlags = TME_NONCLIENT | TME_LEAVE;
 			tracking.hwndTrack = this->window;
 			tracking.dwHoverTime = HOVER_DEFAULT;
-			TrackMouseEvent(&tracking);
+			::TrackMouseEvent(&tracking);
 			this->isMouseTracking = true;
 		}
 		return 0;
@@ -137,7 +138,7 @@ namespace Dance::Application
 		HMENU menu = ::CreatePopupMenu();
 		for (const VisualizerRegistry::Entry& entry : this->registry.Entries)
 		{
-			BET(AppendMenu(
+			BET(::AppendMenu(
 				menu,
 				MF_BYPOSITION | MF_STRING | (this->index == entry.Index ? MF_CHECKED | MF_DISABLED : 0),
 				entry.Index,
@@ -145,7 +146,7 @@ namespace Dance::Application
 		}
 
 		// Exit
-		BET(AppendMenu(
+		BET(::AppendMenu(
 			menu,
 			MF_BYPOSITION | MF_STRING,
 			MENU_EXIT,

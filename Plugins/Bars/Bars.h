@@ -10,6 +10,10 @@
 
 #define SMOOTHING 10
 
+using Dance::API::Visualizer;
+using Dance::Two::TwoVisualizer;
+using Dance::Audio::AudioVisualizer;
+
 static inline float v(float n, float a, float h, float l)
 {
 	const float k = fmod(n + h / 30.0f, 12.0f);
@@ -22,10 +26,10 @@ static inline D2D1::ColorF rgb(float h, float s, float l)
 	return D2D1::ColorF(v(0.0f, a, h, l), v(8.0f, a, h, l), v(4.0f, a, h, l), 1.0f);
 }
 
-class BarsVisualizer : public Dance::Two::TwoVisualizer, public Dance::Audio::AudioVisualizer
+class BarsVisualizer : public TwoVisualizer, public AudioVisualizer
 {
 public:
-	BarsVisualizer(const Visualizer::Dependencies& dependencies)
+	BarsVisualizer(const Visualizer::Dependencies& dependencies, const std::filesystem::path& path)
 		: size{}
 		, TwoVisualizer(dependencies)
 		, AudioVisualizer(dependencies)
@@ -124,15 +128,4 @@ protected:
 	ComPtr<ID2D1SolidColorBrush> brush;
 };
 
-extern "C"
-{
-	__declspec(dllexport) Visualizer* Factory(const Visualizer::Dependencies& dependencies, const std::filesystem::path& path)
-	{
-		return new BarsVisualizer(dependencies);
-	}
-
-	__declspec(dllexport) std::wstring Name()
-	{
-		return L"Bars";
-	}
-}
+VISUALIZER(L"Bars", BarsVisualizer);

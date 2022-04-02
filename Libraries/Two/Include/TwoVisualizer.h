@@ -5,7 +5,7 @@
 
 namespace Dance::Two
 {
-    class TwoVisualizer : public virtual Visualizer
+    class TwoVisualizer : public virtual Dance::API::Visualizer
     {
     public:
         TwoVisualizer(const Dependencies& dependencies);

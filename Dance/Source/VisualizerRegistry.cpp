@@ -29,7 +29,7 @@ namespace Dance::Application
         const std::filesystem::path& path,
         const std::wstring& name,
         HMODULE library,
-        Visualizer::Factory factory
+        Dance::API::Factory factory
     )
         : Index(index)
         , Path(path)
@@ -47,8 +47,6 @@ namespace Dance::Application
 
     HRESULT VisualizerRegistry::Load(const std::filesystem::path& path)
     {
-        TRACE("loading visualizer from " << path);
-
         HMODULE library = ::LoadLibrary(path.wstring().data());
         if (library == nullptr)
         {
@@ -57,8 +55,8 @@ namespace Dance::Application
             return E_FAIL;
         }
 
-        Visualizer::Factory* factory = Find<Visualizer::Factory>(library, "Factory");
-        Visualizer::Name* name = Find<Visualizer::Name>(library, "Name");
+        Dance::API::Factory* factory = Find<Dance::API::Factory>(library, "Factory");
+        Dance::API::Name* name = Find<Dance::API::Name>(library, "Name");
         if (factory == nullptr || name == nullptr)
         {
             TRACE("library does not conform to visualizer API " << path);
@@ -68,6 +66,7 @@ namespace Dance::Application
 
         size_t index = this->Entries.size();
         this->Entries.emplace_back(index, path, name(), library, *factory);
+        TRACE("loaded visualizer " << path);
         return S_OK;
     }
 
@@ -78,7 +77,6 @@ namespace Dance::Application
         {
             if (EndsWith(item.path().string(), ".dll"))
             {
-                TRACE(item.path());
                 this->Load(item.path());
             }
         }

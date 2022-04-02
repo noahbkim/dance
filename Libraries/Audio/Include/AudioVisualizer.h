@@ -6,7 +6,7 @@
 
 namespace Dance::Audio
 {
-    class AudioVisualizer : public virtual Visualizer
+    class AudioVisualizer : public virtual Dance::API::Visualizer
     {
     public:
         AudioVisualizer(const Dependencies& dependencies);

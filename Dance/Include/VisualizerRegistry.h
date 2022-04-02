@@ -10,6 +10,8 @@
 
 namespace Dance::Application
 {
+    using Dance::API::Visualizer;
+
     class VisualizerRegistry
     {
     public:
@@ -20,13 +22,20 @@ namespace Dance::Application
             std::filesystem::path Path;
             std::wstring Name;
 
-            Entry(size_t index, const std::filesystem::path& path, const std::wstring& name, HMODULE library, Visualizer::Factory Factory);
+            Entry
+            (
+                size_t index,
+                const std::filesystem::path& path,
+                const std::wstring& name,
+                HMODULE library,
+                Dance::API::Factory Factory
+            );
 
             std::unique_ptr<Visualizer> New(const Visualizer::Dependencies& dependencies) const;
 
         private:
             LibraryHandle library;
-            std::function<Visualizer* (const Visualizer::Dependencies&, const std::filesystem::path&)> factory;
+            std::function<Dance::API::Factory> factory;
         };
 
         std::vector<Entry> Entries;

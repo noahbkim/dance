@@ -9,8 +9,8 @@
       <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
       <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
     </Filter>
-    <Filter Include="Linked Libraries">
-      <UniqueIdentifier>{2588c1df-1c2a-462c-9a12-85441e6d7c7a}</UniqueIdentifier>
+    <Filter Include="Library Files">
+      <UniqueIdentifier>{932f7c10-02f3-45d8-b06e-3d8c76015c78}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -51,13 +51,13 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <Library Include="libfftw3f-3.lib">
-      <Filter>Linked Libraries</Filter>
-    </Library>
+    <None Include="Resource\libfftw3f-3.dll">
+      <Filter>Library Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
-    <None Include="libfftw3f-3.dll">
-      <Filter>Linked Libraries</Filter>
-    </None>
+    <Library Include="Resource\libfftw3f-3.lib">
+      <Filter>Library Files</Filter>
+    </Library>
   </ItemGroup>
 </Project>

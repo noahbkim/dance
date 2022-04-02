@@ -156,7 +156,6 @@
   <ItemGroup>
     <ClInclude Include="Include\BorderlessWindow.h" />
     <ClInclude Include="Include\Framework.h" />
-    <ClInclude Include="Include\Library.h" />
     <ClInclude Include="Include\Resource.h" />
     <ClInclude Include="Include\Runtime.h" />
     <ClInclude Include="Include\Target.h" />

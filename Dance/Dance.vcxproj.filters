@@ -40,9 +40,6 @@
     <ClInclude Include="Include\Target.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Include\Library.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Dance.rc">
