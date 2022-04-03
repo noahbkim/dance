@@ -5,7 +5,7 @@
 
 namespace Dance::Three
 {
-    class ThreeVisualizer : public virtual Visualizer
+    class ThreeVisualizer : public virtual Dance::API::Visualizer
     {
     public:
         ThreeVisualizer(const Dependencies& dependencies);
