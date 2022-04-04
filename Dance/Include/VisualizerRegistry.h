@@ -3,44 +3,42 @@
 #include <functional>
 #include <vector>
 #include <filesystem>
+#include <utility>
+#include <cstdint>
 
 #include "Visualizer.h"
 #include "Macro.h"
-#include "Pointer.h"
 
 namespace Dance::Application
 {
     using Dance::API::Visualizer;
 
-    class VisualizerRegistry
+    struct Plugin
+    {
+        size_t Index;
+        std::wstring Name;
+        Visualizer::Constructor Constructor;
+        Visualizer::Destructor Destructor;
+    };
+
+    class Plugins
     {
     public:
-        class Entry
-        {
-        public:
-            size_t Index;
-            std::filesystem::path Path;
-            std::wstring Name;
+        static void Load();
+        static void Register(const std::wstring& name, const Visualizer::Constructor& constructor, const Visualizer::Destructor& destructor);
+        static const std::vector<Plugin>& Get();
+        static const Plugin& First();
 
-            Entry
-            (
-                size_t index,
-                const std::filesystem::path& path,
-                const std::wstring& name,
-                HMODULE library,
-                Dance::API::Factory Factory
-            );
-
-            std::unique_ptr<Visualizer> New(const Visualizer::Dependencies& dependencies) const;
-
-        private:
-            LibraryHandle library;
-            std::function<Dance::API::Factory> factory;
-        };
-
-        std::vector<Entry> Entries;
-
-        HRESULT Load(const std::filesystem::path& path);
-        HRESULT Load();
+    private:
+        static std::vector<Plugin>& Vector();
     };
+
+    extern "C" __declspec(dllexport) Dance::API::About _Dance();
+
+    extern "C" __declspec(dllexport) void _Register
+    (
+        const std::wstring& name,
+        const Visualizer::Constructor& constructor,
+        const Visualizer::Destructor& destructor
+    );
 }

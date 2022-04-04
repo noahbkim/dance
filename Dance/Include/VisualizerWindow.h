@@ -35,10 +35,9 @@ namespace Dance::Application
         LRESULT RightButtonDown(WPARAM wParam, LPARAM lParam);
         LRESULT Command(WPARAM wParam, LPARAM lParam);
 
-        LRESULT Switch(size_t index);
+        LRESULT Switch(const Plugin& plugin);
 
-        VisualizerRegistry registry;
-        std::unique_ptr<Visualizer> visualizer;
-        size_t index;
+        Visualizer* visualizer;
+        std::reference_wrapper<const Plugin> plugin;
     };
 }

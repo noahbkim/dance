@@ -14,7 +14,8 @@ namespace Dance::Application
 	)
 		: TransparentWindow(instance, windowClassName, windowTitle)
 		, Runtime()
-		, index(0)
+		, visualizer(nullptr)
+		, plugin(Plugins::First())
 	{
 
 	}
@@ -33,9 +34,8 @@ namespace Dance::Application
 
 	HRESULT VisualizerWindow::Create()
 	{
-		OK(this->registry.Load());
 		TransparentWindow::Create();
-		this->Switch(0);
+		this->Switch(Plugins::First());
 		return S_OK;
 	}
 
@@ -136,13 +136,13 @@ namespace Dance::Application
 	LRESULT VisualizerWindow::RightButtonDown(WPARAM wParam, LPARAM lParam)
 	{
 		HMENU menu = ::CreatePopupMenu();
-		for (const VisualizerRegistry::Entry& entry : this->registry.Entries)
+		for (const Plugin& plugin : Plugins::Get())
 		{
 			BET(::AppendMenu(
 				menu,
-				MF_BYPOSITION | MF_STRING | (this->index == entry.Index ? MF_CHECKED | MF_DISABLED : 0),
-				entry.Index,
-				entry.Name.data()));
+				MF_BYPOSITION | MF_STRING | (this->plugin.get().Index == plugin.Index ? MF_CHECKED | MF_DISABLED : 0),
+				plugin.Index,
+				plugin.Name.data()));
 		}
 
 		// Exit
@@ -178,18 +178,22 @@ namespace Dance::Application
 			}
 			else
 			{
-				return this->Switch(index);
+				return this->Switch(Plugins::Get().at(index));
 			}
 		}
 
 		return 0;
 	}
 
-	LRESULT VisualizerWindow::Switch(size_t index)
+	LRESULT VisualizerWindow::Switch(const Plugin& plugin)
 	{
-		const VisualizerRegistry::Entry& entry = this->registry.Entries.at(index);
-		this->visualizer = entry.New(this->Dependencies());
-		this->index = entry.Index;
+		if (this->visualizer != nullptr)
+		{
+			this->plugin.get().Destructor(this->visualizer);
+		}
+
+		this->plugin = plugin;
+		this->visualizer = plugin.Constructor(this->Dependencies());
 		return 0;
 	}
 

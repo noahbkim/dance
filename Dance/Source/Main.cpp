@@ -27,6 +27,8 @@ int APIENTRY wWinMain(
         return result;
     }
 
+    Dance::Application::Plugins::Load();
+
     Dance::Application::VisualizerWindow window(instance, L"VisualizerWindow", L"Dance");
     OK(window.Create());
     OK(window.Position(100, 100, 480, 480, SWP_FRAMECHANGED));

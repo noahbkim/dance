@@ -1,10 +1,6 @@
 #pragma once
 
-#define WIN32_LEAN_AND_MEAN
-#define NOMINMAX
-#define NOMCX
-#define NOSERVICE
-#define NOHELP
+#include "Options.h"
 
 #include <windows.h>
 #include <wrl.h>
@@ -15,6 +11,7 @@
 #include <string>
 #include <filesystem>
 #include <functional>
+#include <tuple>
 
 namespace Dance::API
 {
@@ -45,22 +42,52 @@ namespace Dance::API
         // Runtime hooks
         virtual void Render() = 0;
         virtual void Update(double delta) = 0;
+
+        // Signatures
+        using Constructor = std::function<Visualizer* (const Visualizer::Dependencies&)>;
+        using Destructor = std::function<void(Visualizer*)>;
+
+        // Static convenience methods for registration
+        template<typename T>
+        static inline T* New(const Dependencies& dependencies)
+        {
+            return new T(dependencies);
+        }
+
+        static inline void Delete(Visualizer* t)
+        {
+            return delete t;
+        }
     };
 
-    // Import types
-    using Factory = Visualizer* __cdecl(const Visualizer::Dependencies&, const std::filesystem::path&);
-    using Name = std::wstring __cdecl();
-}
+    struct About
+    {
+        struct {
+            uint16_t Major;
+            uint16_t Minor;
+            uint32_t Patch;
+        } Version;
+    };
 
-#define VISUALIZER(name, type) \
-extern "C" \
-{ \
-    __declspec(dllexport) Visualizer* Factory(const Visualizer::Dependencies& dependencies, const std::filesystem::path& path) \
-    { \
-        return new type(dependencies, path); \
-    } \
-    __declspec(dllexport) std::wstring Name() \
-    { \
-        return name; \
-    } \
+    template<typename Return, typename ...Args>
+    static inline Return Defer(LPCSTR to, Args ...args)
+    {
+        using Signature = Return __cdecl(Args...);
+        Signature* actual = reinterpret_cast<Signature*>(::GetProcAddress(::GetModuleHandle(nullptr), to));
+        return actual(args...);
+    }
+
+    static inline About Dance()
+    {
+        return Defer<About>("_Dance");
+    }
+
+    static inline void Register
+    (
+        const std::wstring& name,
+        const Visualizer::Constructor& constructor,
+        const Visualizer::Destructor& destructor
+    ) {
+        Defer<void, const std::wstring&, const Visualizer::Constructor&, const Visualizer::Destructor&>("_Register", name, constructor, destructor);
+    }
 }

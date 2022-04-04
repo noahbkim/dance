@@ -29,7 +29,7 @@ static inline D2D1::ColorF rgb(float h, float s, float l)
 class BarsVisualizer : public TwoVisualizer, public AudioVisualizer
 {
 public:
-	BarsVisualizer(const Visualizer::Dependencies& dependencies, const std::filesystem::path& path)
+	BarsVisualizer(const Visualizer::Dependencies& dependencies)
 		: size{}
 		, TwoVisualizer(dependencies)
 		, AudioVisualizer(dependencies)
@@ -127,5 +127,3 @@ protected:
 
 	ComPtr<ID2D1SolidColorBrush> brush;
 };
-
-VISUALIZER(L"Bars", BarsVisualizer);
