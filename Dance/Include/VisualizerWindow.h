@@ -4,7 +4,7 @@
 #include "TransparentWindow.h"
 #include "Runtime.h"
 #include "Visualizer.h"
-#include "VisualizerRegistry.h"
+#include "Plugin.h"
 
 namespace Dance::Application
 {

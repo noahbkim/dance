@@ -1,4 +1,4 @@
-#include "VisualizerRegistry.h"
+#include "Plugin.h"
 #include "Path.h"
 
 namespace Dance::Application

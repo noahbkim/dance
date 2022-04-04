@@ -160,7 +160,7 @@
     <ClInclude Include="Include\Runtime.h" />
     <ClInclude Include="Include\Target.h" />
     <ClInclude Include="Include\TransparentWindow.h" />
-    <ClInclude Include="Include\VisualizerRegistry.h" />
+    <ClInclude Include="Include\Plugin.h" />
     <ClInclude Include="Include\VisualizerWindow.h" />
     <ClInclude Include="Include\Window.h" />
   </ItemGroup>
@@ -179,7 +179,7 @@
     <ClCompile Include="Source\Main.cpp" />
     <ClCompile Include="Source\Runtime.cpp" />
     <ClCompile Include="Source\TransparentWindow.cpp" />
-    <ClCompile Include="Source\VisualizerRegistry.cpp" />
+    <ClCompile Include="Source\Plugin.cpp" />
     <ClCompile Include="Source\VisualizerWindow.cpp" />
     <ClCompile Include="Source\Window.cpp" />
   </ItemGroup>

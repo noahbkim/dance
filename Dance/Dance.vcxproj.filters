@@ -34,7 +34,7 @@
     <ClInclude Include="Include\Resource.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Include\VisualizerRegistry.h">
+    <ClInclude Include="Include\Plugin.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Include\Target.h">
@@ -76,7 +76,7 @@
     <ClCompile Include="Source\Window.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\VisualizerRegistry.cpp">
+    <ClCompile Include="Source\Plugin.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
