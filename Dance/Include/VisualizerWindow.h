@@ -21,10 +21,13 @@ namespace Dance::Application
         /// @param windowTitle is the desired title of the wrapped window.
         VisualizerWindow(InstanceHandle instance, std::wstring windowClassName, std::wstring windowTitle);
 
+        /// Destroy the visualizer window, deallocating the current visualizer.
+        ~VisualizerWindow();
+
         /// Provide dependencies to visualizer instantion.
         /// 
         /// @returns a POD containing handles to relevant graphical resources.
-        virtual const Visualizer::Dependencies& Dependencies() const;
+        virtual Visualizer::Dependencies Dependencies() const;
 
         /// Create the application window, invoking parent creation methods.
         /// 

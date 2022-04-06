@@ -17,8 +17,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Three", "..\Libraries\Three
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Cube", "..\Plugins\Cube\Cube.vcxproj", "{0F985565-3CAA-4139-B22A-1897E397D01A}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Model", "..\Plugins\Model\Model.vcxproj", "{47F1A88B-7D72-49DB-A916-724D22A7EF6A}"
-EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		..\Shared\Shared.vcxitems*{0f985565-3caa-4139-b22a-1897e397d01a}*SharedItemsImports = 4
@@ -84,14 +82,6 @@ Global
 		{0F985565-3CAA-4139-B22A-1897E397D01A}.Release|x64.Build.0 = Release|x64
 		{0F985565-3CAA-4139-B22A-1897E397D01A}.Release|x86.ActiveCfg = Release|Win32
 		{0F985565-3CAA-4139-B22A-1897E397D01A}.Release|x86.Build.0 = Release|Win32
-		{47F1A88B-7D72-49DB-A916-724D22A7EF6A}.Debug|x64.ActiveCfg = Debug|x64
-		{47F1A88B-7D72-49DB-A916-724D22A7EF6A}.Debug|x64.Build.0 = Debug|x64
-		{47F1A88B-7D72-49DB-A916-724D22A7EF6A}.Debug|x86.ActiveCfg = Debug|Win32
-		{47F1A88B-7D72-49DB-A916-724D22A7EF6A}.Debug|x86.Build.0 = Debug|Win32
-		{47F1A88B-7D72-49DB-A916-724D22A7EF6A}.Release|x64.ActiveCfg = Release|x64
-		{47F1A88B-7D72-49DB-A916-724D22A7EF6A}.Release|x64.Build.0 = Release|x64
-		{47F1A88B-7D72-49DB-A916-724D22A7EF6A}.Release|x86.ActiveCfg = Release|Win32
-		{47F1A88B-7D72-49DB-A916-724D22A7EF6A}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

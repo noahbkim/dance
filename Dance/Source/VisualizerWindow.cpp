@@ -20,7 +20,13 @@ namespace Dance::Application
 
 	}
 
-	const Visualizer::Dependencies& VisualizerWindow::Dependencies() const
+	VisualizerWindow::~VisualizerWindow()
+	{
+		// Destroy the visualizer
+		this->plugin.get().Destructor(this->visualizer);
+	}
+
+	Visualizer::Dependencies VisualizerWindow::Dependencies() const
 	{
 		return {
 			this->instance,
@@ -200,10 +206,10 @@ namespace Dance::Application
 
 	LRESULT VisualizerWindow::Close()
 	{
-		this->plugin.get().Destructor(this->visualizer);
+		// Close the window
 		this->Destroy();
 
-		// We quit when this window closes.
+		// We quit when this window closes
 		::PostQuitMessage(0);
 
 		return 0;
