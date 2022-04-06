@@ -50,15 +50,10 @@
 #pragma comment(lib, "Winmm.lib")
 
 // Useful stuff we use frequently
-#include <algorithm>
-#include <cmath>
 #include <cstdint>
-#include <exception>
 #include <memory>
 #include <string>
 #include <vector>
-#include <iostream>
-#include <sstream>
 
 // IDs
 #include "Resource.h"

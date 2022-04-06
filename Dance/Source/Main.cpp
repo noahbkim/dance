@@ -19,6 +19,20 @@ int APIENTRY wWinMain(
     UNREFERENCED_PARAMETER(previousInstance);
     UNREFERENCED_PARAMETER(commandLine);
 
+    Dance::Application::Plugins::Load();
+    if (Dance::Application::Plugins::Get().size() == 0)
+    {
+        ::MessageBox
+        (
+            nullptr,
+            L"Make sure your visualizer plugins are available in the Visualizers folder next to the Dance executable.",
+            L"No visualizer plugins available!",
+            MB_ICONEXCLAMATION| MB_OK
+        );
+
+        return 0;
+    }
+
     WCHAR szWindowTitle[MAX_LOADED_STRING_LENGTH];
     ::LoadStringW(instance, IDS_APP_TITLE, szWindowTitle, MAX_LOADED_STRING_LENGTH);
 
@@ -26,8 +40,6 @@ int APIENTRY wWinMain(
         TRACE("failed to initialize threading model: " << result);
         return result;
     }
-
-    Dance::Application::Plugins::Load();
 
     Dance::Application::VisualizerWindow window(instance, L"VisualizerWindow", L"Dance");
     OK(window.Create());

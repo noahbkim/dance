@@ -9,9 +9,7 @@
 #include <d2d1_2.h>
 
 #include <string>
-#include <filesystem>
 #include <functional>
-#include <tuple>
 
 namespace Dance::API
 {
@@ -89,5 +87,11 @@ namespace Dance::API
         const Visualizer::Destructor& destructor
     ) {
         Defer<void, const std::wstring&, const Visualizer::Constructor&, const Visualizer::Destructor&>("_Register", name, constructor, destructor);
+    }
+
+    template<typename T>
+    static inline void Register(const std::wstring& name)
+    {
+        Register(name, Visualizer::New<T>, Visualizer::Delete);
     }
 }

@@ -11,8 +11,13 @@ namespace Dance::Application
 
     void Plugins::Load()
     {
-        std::filesystem::path executableDirectory = GetModulePath().parent_path();
-        for (const auto& item : std::filesystem::recursive_directory_iterator{ executableDirectory / "Visualizers" })
+        std::filesystem::path visualizersDirectory = GetModulePath().parent_path() / "Visualizers";
+        if (!std::filesystem::is_directory(visualizersDirectory))
+        {
+            return;
+        }
+
+        for (const auto& item : std::filesystem::recursive_directory_iterator{ visualizersDirectory })
         {
             if (EndsWith(item.path().string(), ".dll"))
             {

@@ -20,7 +20,7 @@ namespace Dance::Application
 
 	}
 
-	Visualizer::Dependencies VisualizerWindow::Dependencies() const
+	const Visualizer::Dependencies& VisualizerWindow::Dependencies() const
 	{
 		return {
 			this->instance,
@@ -91,6 +91,19 @@ namespace Dance::Application
 	void VisualizerWindow::Update(double delta)
 	{
 		this->visualizer->Update(delta);
+	}
+
+	LRESULT VisualizerWindow::Switch(const Plugin& plugin)
+	{
+		if (this->visualizer != nullptr)
+		{
+			this->plugin.get().Destructor(this->visualizer);
+		}
+
+		this->plugin = plugin;
+		this->visualizer = plugin.Constructor(this->Dependencies());
+		::SetWindowText(this->window, plugin.Name.data());
+		return 0;
 	}
 
 	LRESULT VisualizerWindow::MouseMove(WPARAM wParam, LPARAM lParam)
@@ -185,22 +198,14 @@ namespace Dance::Application
 		return 0;
 	}
 
-	LRESULT VisualizerWindow::Switch(const Plugin& plugin)
-	{
-		if (this->visualizer != nullptr)
-		{
-			this->plugin.get().Destructor(this->visualizer);
-		}
-
-		this->plugin = plugin;
-		this->visualizer = plugin.Constructor(this->Dependencies());
-		return 0;
-	}
-
 	LRESULT VisualizerWindow::Close()
 	{
+		this->plugin.get().Destructor(this->visualizer);
 		this->Destroy();
+
+		// We quit when this window closes.
 		::PostQuitMessage(0);
+
 		return 0;
 	}
 }

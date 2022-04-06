@@ -106,7 +106,7 @@ BOOL WINAPI DllMain(HINSTANCE instance, DWORD reason, LPVOID reserved)
     if (reason == DLL_PROCESS_ATTACH)
     {
         DllPath = GetModulePath(instance);
-        Dance::API::Register(L"Bars", Visualizer::New<BarsVisualizer>, Visualizer::Delete);
+        Dance::API::Register<BarsVisualizer>(L"Bars");
     }
     return TRUE;
 }

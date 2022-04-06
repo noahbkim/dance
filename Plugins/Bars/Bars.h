@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <string>
 #include <cmath>
+#include <filesystem>
 
 #include "AudioVisualizer.h"
 #include "TwoVisualizer.h"

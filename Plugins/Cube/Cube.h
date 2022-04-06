@@ -11,6 +11,8 @@
 #include "ThreeVisualizer.h"
 #include "AudioVisualizer.h"
 
+#include <filesystem>
+
 using Dance::API::Visualizer;
 using namespace Dance::Three::Graphics;
 using namespace Dance::Three::Math;

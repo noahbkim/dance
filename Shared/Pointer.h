@@ -2,6 +2,7 @@
 
 #include <combaseapi.h>
 #include <wrl.h>
+#include <memory>
 
 /// Deletion struct for memory allocated by CoTaskMemAlloc.
 template<typename T>
