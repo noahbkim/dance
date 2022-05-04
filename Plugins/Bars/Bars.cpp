@@ -26,7 +26,7 @@ HRESULT BarsVisualizer::Resize(const RECT& size)
 {
 	this->size = size;
 
-	this->barCount = std::min(static_cast<size_t>(size.right - size.left) / 40, this->analyzer.Spectrum().size());
+	this->barCount = std::max(std::min(static_cast<size_t>(size.right - size.left) / 40, this->analyzer.Spectrum().size()), 1ULL);
 	this->sampleStart = 0;
 	this->sampleEnd = std::max(this->barCount, this->analyzer.Spectrum().size() / 20);
 	this->samplesPerBar = (this->sampleEnd - this->sampleStart) / this->barCount;

@@ -31,12 +31,11 @@ namespace Dance::Application
 	)
 		: Window(instance, windowClassName, windowTitle)
 	{
-
+		this->windowStyle = WS_POPUP | WS_MINIMIZEBOX;
 	}
 
 	HRESULT BorderlessWindow::Create()
 	{
-		this->windowStyle = WS_POPUP | WS_THICKFRAME | WS_CAPTION | WS_SYSMENU | WS_MAXIMIZEBOX | WS_MINIMIZEBOX;
 		OK(Window::Create());
 
 		// Redraw the frame so the safe area is recalculated

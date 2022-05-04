@@ -82,8 +82,8 @@ namespace Dance::Application
 		swapChainDescription.BufferCount = 2;
 		swapChainDescription.SampleDesc.Count = 1;
 		swapChainDescription.AlphaMode = DXGI_ALPHA_MODE_PREMULTIPLIED;
-		swapChainDescription.Width = this->size.right - this->size.left;
-		swapChainDescription.Height = this->size.bottom - this->size.top;
+		swapChainDescription.Width = 1;
+		swapChainDescription.Height = 1;
 
 		// Create the composition swap chain with this description and create a pointer to the Direct3D device
 		OK(this->dxgiFactory->CreateSwapChainForComposition(
@@ -98,11 +98,6 @@ namespace Dance::Application
 			D2D_FACTORY_CREATION_FLAGS,
 			this->d2dFactory.ReleaseAndGetAddressOf()));
 
-		// Create the Direct2D device that links back to the Direct3D device
-		OK(this->d2dFactory->CreateDevice(
-			this->dxgiDevice.Get(),
-			this->d2dDevice.ReleaseAndGetAddressOf()));
-
 		OK(this->CreateComposition());
 
 		return S_OK;
@@ -111,7 +106,7 @@ namespace Dance::Application
 	HRESULT TransparentWindow::CreateComposition()
 	{
 		OK(::DCompositionCreateDevice(
-			dxgiDevice.Get(),
+			this->dxgiDevice.Get(),
 			__uuidof(this->dCompositionDevice),
 			reinterpret_cast<void**>(this->dCompositionDevice.ReleaseAndGetAddressOf())));
 		OK(this->dCompositionDevice->CreateTargetForHwnd(

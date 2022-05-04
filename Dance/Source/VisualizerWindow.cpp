@@ -40,8 +40,18 @@ namespace Dance::Application
 
 	HRESULT VisualizerWindow::Create()
 	{
-		TransparentWindow::Create();
+		// Enables shadow for visibility while resizing
+		this->windowStyle |= WS_CAPTION;
+
+		OK(TransparentWindow::Create());
+
+		// Create the Direct2D device that links back to the Direct3D device
+		OK(this->d2dFactory->CreateDevice(
+			this->dxgiDevice.Get(),
+			this->d2dDevice.ReleaseAndGetAddressOf()));
+
 		this->Switch(Plugins::First());
+
 		return S_OK;
 	}
 

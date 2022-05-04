@@ -59,6 +59,9 @@ namespace Dance::Application
         LRESULT Close();
 
     protected:
+        /// A DirectX 2D device with which we'll render stuff to our window.
+        ComPtr<ID2D1Device1> d2dDevice;
+
         /// Whether the mouse is currently hovering over any of the hittable area of the window.
         bool isMouseHovering = false;
 

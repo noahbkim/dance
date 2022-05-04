@@ -103,10 +103,10 @@ namespace Dance::Application
 		return ::DefWindowProcW(windowHandle, message, wParam, lParam);
 	}
 
-	LRESULT CALLBACK Window::Dispatch(HWND windowHandle, UINT message, WPARAM wParam, LPARAM lParam, UINT_PTR subclass, DWORD_PTR owner)
+	LRESULT CALLBACK Window::Dispatch(HWND windowHandle, UINT message, WPARAM wParam, LPARAM lParam, UINT_PTR subclass, DWORD_PTR dwRefData)
 	{
 		// https://stackoverflow.com/questions/35178779/wndproc-as-class-method
-		Window* self = reinterpret_cast<Window*>(owner);
+		Window* self = reinterpret_cast<Window*>(dwRefData);
 		return self->Message(windowHandle, message, wParam, lParam);
 	}
 

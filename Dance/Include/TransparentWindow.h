@@ -65,9 +65,6 @@ namespace Dance::Application
         /// A DirectX 2D component factory we'll use to set up 2D rendering on our window.
         ComPtr<ID2D1Factory2> d2dFactory;
 
-        /// A DirectX 2D device with which we'll render stuff to our window.
-        ComPtr<ID2D1Device1> d2dDevice;
-
         /// The composition device that handles rendering the background of our surface into our swapchain.
         ComPtr<IDCompositionDevice> dCompositionDevice;
 
